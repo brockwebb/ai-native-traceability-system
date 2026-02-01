@@ -38,8 +38,11 @@ mcp = [
 Homepage = "https://github.com/brockwebb/ai-native-traceability-system"
 Repository = "https://github.com/brockwebb/ai-native-traceability-system"
 
+[project.scripts]
+trace-mcp = "mcp_server.server:main"
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/trace_core"]
+packages = ["src/trace_core", "mcp_server"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
