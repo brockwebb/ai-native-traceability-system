@@ -19,12 +19,27 @@ The original documentation frames this as a formal traceability system (modern D
 
 ## 2. Core Requirements
 
+### 2.1 Baseline (shared with existing context managers)
+
+- **Persist across sessions** — memory survives thread death
+- **MCP interface** — Claude can query and write via tools
+- **Survive compaction** — context limits don't destroy project knowledge
+
+### 2.2 Differentiators (what existing tools don't do)
+
+- **Typed relationships** — `implements`, `depends_on`, `verifies`, `supersedes` — not just blobs of text
+- **Impact queries** — "what breaks if X changes?" answerable from the graph
+- **Artifact anchors with drift detection** — know *where* in a file something lives, detect when it moves
+- **Decision-first** — not just "what happened" but "what we decided and why"
+- **Proposed vs authoritative state** — AI writes freely, human approves in batches
+
+### 2.3 Operational Requirements
+
 1. **Claude can query it** — MCP tools answer "where is X," "what did we decide about Y," "what depends on Z"
 2. **Capture happens during work** — not a separate documentation phase
-3. **Decisions are first-class** — not just artifacts, but why and when
-4. **Break-fix history** — "we tried X, it broke Y, we reverted" is queryable
-5. **Survives thread death** — graph persists, any Claude instance reconnects via queries
-6. **Impact cascades** — "requirement X changed, what's affected?"
+3. **Break-fix history** — "we tried X, it broke Y, we reverted" is queryable
+4. **Survives thread death** — graph persists, any Claude instance reconnects via queries
+5. **Impact cascades** — "requirement X changed, what's affected?"
 
 ---
 

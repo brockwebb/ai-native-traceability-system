@@ -4,51 +4,74 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AI-Native Traceability System — an AI-first semantic traceability tool where relationships between project artifacts (requirements, code, tests, decisions) are captured as you work, not after. Think "modern DOORS" but graph-centric and AI-assisted.
+AI-Native Traceability System — project memory infrastructure that survives context windows, thread death, and human absence. Captures relationships between artifacts (requirements, code, tests, decisions) as you work, not after.
 
-**Current status:** Design/specification phase. Comprehensive design docs exist in `docs/` but no source code has been implemented yet. Implementation should follow the milestone plan in the detailed design spec.
+**Current status:** Design/specification phase. Design docs in `docs/`. No source code implemented yet.
+
+## Key Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `docs/` | Design documents, specifications, decision records |
+| `handoffs/` | Session handoff notes for context continuity between threads |
+| `cc_tasks/` | Claude Code task files — instructions for CC to execute |
+
+**Full paths (always use these to avoid ambiguity):**
+- **Handoffs:** `/Users/brock/Documents/GitHub/ai-native-traceability-system/handoffs/`
+- **CC Tasks:** `/Users/brock/Documents/GitHub/ai-native-traceability-system/cc_tasks/`
+
+**When writing handoffs:** Save to handoffs directory with date prefix (e.g., `2025-01-31_session_notes.md`)
+
+**When writing CC tasks:** Save to cc_tasks directory with descriptive name (e.g., `implement_event_parser.md`)
 
 ## Architecture
 
-The system is **event-sourced** and **graph-centric** with a **local-first** deployment model.
-
 Core axiom: *Artifacts are inputs. Relationships are the system.*
 
-**Component flow:**
+### Source of Truth
+- **Event log:** `events.jsonl` — append-only, one JSON event per line, lives in repo
+- Human-readable, git-diffable, no binary formats
+
+### Graph Projection
+- **NetworkX** — Python, in-memory, rebuilt from events on load
+- Zero infrastructure dependency
+- Neo4j optional for power users, not default
+
+### Authority Model
+- AI writes everything as `proposed` — zero friction capture
+- Human approves in batches at natural breakpoints
+- Both proposed and authoritative states are queryable
+- Proposed = working memory, Authoritative = committed memory
+
+### File Structure (planned)
 ```
-Creator Tools → Artifact Registry → Event Log (source of truth) → Graph Projection Store → MCP Interface → Consumers
-                      ↓                    ↑
-               AI Assistance Service ──────┘ (proposals only)
+.trace/
+  events.jsonl      # append-only event log (source of truth)
+  anchors.yaml      # external index of in-file locations
 ```
-
-Key architectural boundaries:
-- **Event Log** is the immutable source of truth; the Graph Projection is rebuildable from it
-- **AI never writes authoritative state** — it only creates `proposed` edges that require human acceptance
-- Every relationship has a `state` (`proposed` | `authoritative`), `evidence`, and `confidence` score
-- All mutations are recorded as typed events (`NODE_ADDED`, `EDGE_ADDED`, `PROPOSAL_ACCEPTED`, etc.)
-
-**Data model:** Artifacts (requirement, decision, module, test, spec, etc.) connected by typed relationships (implements, verifies, depends_on, specifies, justifies, relates_to).
-
-**MCP tools:** Read tools (trace, impact, orphans, history, coverage) and write tools (propose_links, accept_proposal, reject_proposal).
-
-## Technology Stack
-
-Planned: Python (per .gitignore patterns), with Neo4j or equivalent graph store. Jupyter notebook support for analysis.
 
 ## Design Documents
 
 All in `docs/`:
-- `ai_native_traceability_system_top_level_vision_plan.md` — vision, objectives, 5-phase roadmap
-- `system_requirements_specification_*.md` — functional (FR-1–FR-17) and non-functional requirements
-- `architecture_specification_*.md` — component, data, event, and deployment architecture with Mermaid diagrams
-- `detailed_design_specification_*.md` — data model, services, MCP interface, implementation milestones
-- `concept_of_operations_conops_*.md` — usage scenarios and operational policies
-- `analysis_of_alternatives_*.md` — market analysis justifying the BUILD decision
+- `ai_native_traceability_system_top_level_vision_plan.md` — vision, objectives
+- `system_requirements_specification_*.md` — FR-1 through FR-17
+- `architecture_specification_*.md` — component diagrams (note: Neo4j replaced by NetworkX)
+- `detailed_design_specification_*.md` — data model, services, milestones
+- `concept_of_operations_conops_*.md` — usage scenarios
+- `analysis_of_alternatives_*.md` — BUILD decision rationale
+- `design_decisions_2025-01-31.md` — **current working decisions**, supersedes older docs where they conflict
+
+## Technology Stack
+
+- Python
+- NetworkX (in-memory graph projection)
+- JSONL (event log format)
+- No database server required for core function
 
 ## Implementation Milestones
 
-1. **Minimal Core** — Event log, projection, minimal schema, manual artifact registration, MCP read tools (trace/impact/orphans)
+1. **Minimal Core** — Event log, NetworkX projection, minimal schema, manual artifact registration, query tools
 2. **AI Proposals** — Proposal generation, accept/reject workflow, evidence + confidence
 3. **Temporal Features** — Rewind, diff, history queries
-4. **Packaging** — Containerized stack, local-first defaults, optional git sync
-5. **Visualization** — Timeline playback, graph evolution animation
+4. **Parsers** — Automatic anchor extraction (Markdown headings, Python AST)
+5. **Claude Code Integration** — Skills for capture during work

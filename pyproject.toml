@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-native-traceability"
+version = "0.1.0"
+description = "Project memory infrastructure that survives context windows, thread death, and human absence"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Brock Webb", email = "brockwebb@users.noreply.github.com" }
+]
+keywords = ["traceability", "requirements", "ai", "mcp", "project-memory"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "networkx>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+]
+mcp = [
+    "mcp>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/brockwebb/ai-native-traceability-system"
+Repository = "https://github.com/brockwebb/ai-native-traceability-system"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/trace_core"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]

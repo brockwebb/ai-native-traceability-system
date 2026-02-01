@@ -235,7 +235,58 @@ Write tools shall:
 
 ---
 
-## 10. Implementation Plan (Milestones)
+## 10. Design Decisions Rationale
+
+### Why events.jsonl + NetworkX over Neo4j
+
+**Problem constraint:** The system must work identically across Claude Code, Claude Desktop, and standalone scripts without infrastructure setup.
+
+**Neo4j costs:**
+- Requires running server process
+- Connection management overhead
+- Not portable across environments without Docker or install
+- Overkill for single-project, single-user memory
+
+**JSONL + NetworkX benefits:**
+- Zero infrastructure — `pip install networkx`, done
+- Event log is human-readable, git-diffable, inspectable when things break
+- Graph rebuilds from events in milliseconds for typical project size
+- Same code runs everywhere Python runs
+- Source of truth is plain text, not a database
+
+**Trade-off accepted:** This prioritizes portability and correctness over query performance at scale. For personal/team project memory (hundreds to low thousands of artifacts), this is the right trade. If someone needs 50K+ nodes with complex traversals, Neo4j remains available as optional projection target.
+
+### Why external anchors over in-file markers
+
+**In-file markers fail because:**
+- Developers delete "magic comments" during cleanup
+- Some file types don't support comments (JSON, binaries)
+- Markers drift silently when code moves
+- Creates coupling between tool and source files
+
+**External anchors succeed because:**
+- Decoupled from source — files stay clean
+- Hash-based verification detects drift explicitly
+- Works uniformly across all file types
+- Location metadata is queryable, not hidden in comments
+
+### Why proposed/authoritative over immediate writes
+
+**Learned from failure:** Unconstrained AI writes caused costly mistakes requiring days to untangle. The "vibe coding" failure mode is real.
+
+**But per-item approval kills adoption:** Constant interruption makes the tool annoying, then abandoned.
+
+**Batch approval at breakpoints:** Captures the benefit of human authority without the friction. Proposed state is immediately useful for queries — it's working memory, not limbo.
+
+---
+
+## 11. Open Questions
+
+- *Caution: Keep artifact types descriptive, not normative. Let relationships carry most of the meaning. Prefer adding properties later over enforcing schemas early.*
+
+---
+
+## 12. Implementation Plan (Milestones)
 
 ### Milestone 1 — Minimal Core
 - Event log + projection
@@ -264,7 +315,7 @@ Write tools shall:
 
 ---
 
-## 11. Design Risks
+## 13. Design Risks
 
 - Proposal noise overwhelms creators
 - Schema rigidity recreates legacy friction
