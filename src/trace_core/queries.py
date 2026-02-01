@@ -52,3 +52,65 @@ class TraceQueries:
             for n in self.by_type("decision")
             if self.tg.get_artifact(n)
         ]
+
+    def list_artifacts(self, artifact_type: str | None = None) -> list[dict]:
+        """List all artifacts, optionally filtered by type."""
+        if artifact_type:
+            artifact_ids = self.by_type(artifact_type)
+        else:
+            artifact_ids = list(self.tg.graph.nodes())
+
+        return [
+            self.tg.get_artifact(artifact_id)
+            for artifact_id in artifact_ids
+            if self.tg.get_artifact(artifact_id)
+        ]
+
+    def search_artifacts(
+        self,
+        query: str | None = None,
+        artifact_type: str | None = None,
+        tags: list[str] | None = None
+    ) -> list[dict]:
+        """Search artifacts by name, path, type, or tags.
+
+        Args:
+            query: Substring to match in artifact_id or file_path
+            artifact_type: Filter by artifact type
+            tags: List of tags - matches if artifact has ANY of these tags
+
+        Returns:
+            List of artifact dicts that match the criteria
+        """
+        matches = []
+
+        # Start with all artifacts or type-filtered
+        if artifact_type:
+            candidates = self.by_type(artifact_type)
+        else:
+            candidates = list(self.tg.graph.nodes())
+
+        for artifact_id in candidates:
+            artifact = self.tg.get_artifact(artifact_id)
+            if not artifact:
+                continue
+
+            # Check query match (substring in ID or file_path)
+            if query:
+                query_lower = query.lower()
+                id_match = query_lower in artifact_id.lower()
+                file_path = artifact.get("file_path", "")
+                path_match = query_lower in file_path.lower()
+
+                if not (id_match or path_match):
+                    continue
+
+            # Check tags match (artifact has ANY of the specified tags)
+            if tags:
+                artifact_tags = artifact.get("tags", [])
+                if not any(tag in artifact_tags for tag in tags):
+                    continue
+
+            matches.append(artifact)
+
+        return matches

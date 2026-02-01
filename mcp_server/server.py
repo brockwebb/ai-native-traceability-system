@@ -116,6 +116,11 @@ class TraceabilityServer:
                                 "type": "string",
                                 "description": "Optional content hash for change detection",
                             },
+                            "tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Optional tags for discovery and search",
+                            },
                         },
                         "required": ["artifact_id", "artifact_type"],
                     },
@@ -164,6 +169,41 @@ class TraceabilityServer:
                         "required": ["source_id", "target_id"],
                     },
                 ),
+                Tool(
+                    name="list_artifacts",
+                    description="List all registered artifacts, optionally filtered by type",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "artifact_type": {
+                                "type": "string",
+                                "description": "Optional artifact type filter (requirement, decision, module, function, test, document, issue)",
+                            },
+                        },
+                    },
+                ),
+                Tool(
+                    name="search_artifacts",
+                    description="Search artifacts by name, path, type, or tags",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Optional substring to search in artifact IDs and file paths",
+                            },
+                            "artifact_type": {
+                                "type": "string",
+                                "description": "Optional artifact type filter",
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Optional tags to search for (matches if artifact has ANY of these tags)",
+                            },
+                        },
+                    },
+                ),
             ]
 
         @self.server.call_tool()
@@ -186,6 +226,10 @@ class TraceabilityServer:
                     result = self._handle_propose_link(arguments)
                 elif name == "accept_proposal":
                     result = self._handle_accept_proposal(arguments)
+                elif name == "list_artifacts":
+                    result = self._handle_list_artifacts(arguments)
+                elif name == "search_artifacts":
+                    result = self._handle_search_artifacts(arguments)
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -265,6 +309,8 @@ class TraceabilityServer:
             payload["line_start"] = args["line_start"]
         if "content_hash" in args:
             payload["content_hash"] = args["content_hash"]
+        if "tags" in args:
+            payload["tags"] = args["tags"]
 
         # Create and append event
         event = Event(
@@ -349,6 +395,33 @@ class TraceabilityServer:
             "source": args["source_id"],
             "target": args["target_id"],
             "state": "authoritative",
+        }
+
+    def _handle_list_artifacts(self, args: dict) -> dict:
+        """Handle list_artifacts tool call."""
+        artifact_type = args.get("artifact_type")
+        artifacts = self.queries.list_artifacts(artifact_type)
+
+        return {
+            "artifacts": artifacts,
+            "count": len(artifacts),
+        }
+
+    def _handle_search_artifacts(self, args: dict) -> dict:
+        """Handle search_artifacts tool call."""
+        query = args.get("query")
+        artifact_type = args.get("artifact_type")
+        tags = args.get("tags")
+
+        matches = self.queries.search_artifacts(
+            query=query,
+            artifact_type=artifact_type,
+            tags=tags
+        )
+
+        return {
+            "matches": matches,
+            "count": len(matches),
         }
 
     async def run(self) -> None:

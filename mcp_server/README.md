@@ -63,17 +63,25 @@ Add this to your Claude Desktop MCP settings (`~/Library/Application Support/Cla
    - Input: none
    - Returns: `{proposed_links[], count}`
 
+6. **list_artifacts** - List all registered artifacts, optionally filtered by type
+   - Input: optional: `artifact_type` (string)
+   - Returns: `{artifacts[], count}`
+
+7. **search_artifacts** - Search artifacts by name, path, type, or tags
+   - Input: optional: `query` (string), `artifact_type` (string), `tags` (array)
+   - Returns: `{matches[], count}`
+
 ### Write Operations
 
-6. **add_artifact** - Register a new artifact in the trace system
-   - Input: `artifact_id`, `artifact_type`, optional: `file_path`, `line_start`, `content_hash`
+8. **add_artifact** - Register a new artifact in the trace system
+   - Input: `artifact_id`, `artifact_type`, optional: `file_path`, `line_start`, `content_hash`, `tags`
    - Returns: `{success, artifact_id, state}`
 
-7. **propose_link** - Create a proposed link between two artifacts
+9. **propose_link** - Create a proposed link between two artifacts
    - Input: `source_id`, `target_id`, `relationship_type`, `rationale`
    - Returns: `{success, source, target, relationship_type, state}`
 
-8. **accept_proposal** - Promote a proposed link to authoritative state
+10. **accept_proposal** - Promote a proposed link to authoritative state
    - Input: `source_id`, `target_id`
    - Returns: `{success, source, target, state}`
 
@@ -127,6 +135,47 @@ impact(artifact_id="FR-1")        # See what breaks if FR-1 changes
 # Approve
 accept_proposal(source_id="FR-1", target_id="auth_module")
 ```
+
+## Discovery & Search
+
+Find artifacts without knowing their exact IDs:
+
+```python
+# Add artifacts with tags for easier discovery
+add_artifact(
+    artifact_id="roadmap-2026",
+    artifact_type="document",
+    file_path="docs/roadmap.md",
+    tags=["planning", "future", "vision"]
+)
+
+# List all artifacts
+list_artifacts()
+
+# List artifacts by type
+list_artifacts(artifact_type="requirement")
+
+# Search by substring (case-insensitive)
+search_artifacts(query="auth")  # Finds "auth_module", "user-authentication", etc.
+
+# Search by tags
+search_artifacts(tags=["planning", "future"])  # Finds artifacts with ANY of these tags
+
+# Combined search
+search_artifacts(
+    query="user",
+    artifact_type="requirement",
+    tags=["security"]
+)
+```
+
+### Tags
+
+Tags make artifacts discoverable:
+- Add multiple tags when creating artifacts
+- Search finds artifacts with ANY matching tag (OR logic)
+- Tags persist through event log reload
+- Optional - existing code works without tags
 
 ## Storage
 
