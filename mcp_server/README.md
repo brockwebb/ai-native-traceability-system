@@ -1,6 +1,6 @@
 # Traceability MCP Server
 
-MCP server that exposes traceability tools to Claude.
+MCP server that exposes 10 traceability tools to Claude.
 
 ## Installation
 
@@ -63,13 +63,15 @@ Add this to your Claude Desktop MCP settings (`~/Library/Application Support/Cla
    - Input: none
    - Returns: `{proposed_links[], count}`
 
-6. **list_artifacts** - List all registered artifacts, optionally filtered by type
-   - Input: optional: `artifact_type` (string)
-   - Returns: `{artifacts[], count}`
+### Discovery Tools
+
+6. **list_artifacts** - List all registered artifacts
+   - Input: optional `artifact_type` filter
+   - Returns: `{artifacts: [{id, type, file_path, tags}, ...], count}`
 
 7. **search_artifacts** - Search artifacts by name, path, type, or tags
-   - Input: optional: `query` (string), `artifact_type` (string), `tags` (array)
-   - Returns: `{matches[], count}`
+   - Input: `query` (substring), `artifact_type`, `tags` (any match)
+   - Returns: `{matches: [{id, type, file_path, tags}, ...], count}`
 
 ### Write Operations
 
