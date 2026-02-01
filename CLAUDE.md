@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI-Native Traceability System — project memory infrastructure that survives context windows, thread death, and human absence. Captures relationships between artifacts (requirements, code, tests, decisions) as you work, not after.
 
-**Current status:** Design/specification phase. Design docs in `docs/`. No source code implemented yet.
+**Current status:** Core implementation complete. MCP server operational. System is dogfooding itself (see `.trace/events.jsonl`).
 
 ## Key Directories
 
@@ -70,8 +70,34 @@ All in `docs/`:
 
 ## Implementation Milestones
 
-1. **Minimal Core** — Event log, NetworkX projection, minimal schema, manual artifact registration, query tools
-2. **AI Proposals** — Proposal generation, accept/reject workflow, evidence + confidence
+1. ✅ **Minimal Core** — Event log, NetworkX projection, minimal schema, manual artifact registration, query tools
+2. ✅ **AI Proposals** — Proposal generation, accept/reject workflow, evidence + confidence
 3. **Temporal Features** — Rewind, diff, history queries
 4. **Parsers** — Automatic anchor extraction (Markdown headings, Python AST)
-5. **Claude Code Integration** — Skills for capture during work
+5. ✅ **Claude Code Integration** — Skills for capture during work
+
+## Traceability Integration
+
+This repository uses AI-native traceability to track relationships between requirements, code, tests, and decisions.
+
+**Claude Code should:**
+1. **Capture new artifacts automatically** - Register files when creating them
+2. **Propose links when relationships are clear** - Connect requirements to implementations, tests to code, etc.
+3. **Check impact before major changes** - Use `impact()` to see downstream effects
+4. **End sessions with approval reminder** - Note how many proposed links await approval
+
+**Skill file:** See `.claude/skills/traceability.md` for detailed patterns and workflows.
+
+**MCP Tools Available:**
+- `trace(artifact_id)` - Show upstream/downstream neighbors
+- `impact(artifact_id)` - See what breaks if this changes
+- `orphans()` - Find unlinked artifacts
+- `proposed_links()` - Review pending approvals
+- `add_artifact(id, type, file_path)` - Register new artifact
+- `propose_link(source, target, rel_type, rationale)` - Create relationship
+- `accept_proposal(source, target)` - Promote to authoritative (human only)
+
+**Current trace state:**
+- View: `.trace/events.jsonl` (append-only event log)
+- Query: `python scripts/query_trace.py`
+- Regenerate: `python scripts/dogfood_trace.py`
