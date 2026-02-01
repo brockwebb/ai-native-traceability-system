@@ -101,3 +101,66 @@ This repository uses AI-native traceability to track relationships between requi
 - View: `.trace/events.jsonl` (append-only event log)
 - Query: `python scripts/query_trace.py`
 - Regenerate: `python scripts/dogfood_trace.py`
+
+## MCP Configuration (Project-Scoped)
+
+This project uses **project-scoped MCP configuration** via `.mcp.json` in the project root.
+
+**IMPORTANT:** Only the `trace:*` tools are available in this project context.
+
+### Available Tools (10 total)
+
+**Read-Only Queries:**
+1. `trace(artifact_id)` - Get upstream/downstream neighbors
+2. `impact(artifact_id)` - See all affected artifacts
+3. `orphans()` - Find unlinked artifacts
+4. `decisions()` - Get all decision records
+5. `proposed_links()` - List pending approvals
+
+**Discovery Tools:**
+6. `list_artifacts(artifact_type?)` - List all artifacts
+7. `search_artifacts(query?, type?, tags?)` - Search artifacts
+
+**Write Operations:**
+8. `add_artifact(id, type, file_path?, tags?)` - Register artifact
+9. `propose_link(source, target, rel_type, rationale)` - Create link
+10. `accept_proposal(source, target)` - Promote to authoritative
+
+### What's NOT Available
+
+**No database servers in this project:**
+- ❌ No Neo4j tools (this project uses NetworkX, not Neo4j)
+- ❌ No PostgreSQL tools (no database server)
+- ❌ No arnold-* tools (different project)
+- ❌ No census-* tools (different project)
+
+**This project uses:**
+- ✅ NetworkX (in-memory graph)
+- ✅ JSONL files (`.trace/events.jsonl`)
+- ✅ Zero infrastructure dependencies
+- ✅ Git-integrated storage
+
+### Configuration File
+
+**Location:** `.mcp.json` (project root)
+
+```json
+{
+  "mcpServers": {
+    "trace": {
+      "command": "/opt/anaconda3/bin/python",
+      "args": ["-m", "mcp_server.server"],
+      "cwd": "/Users/brock/Documents/GitHub/ai-native-traceability-system",
+      "env": {
+        "TRACE_DIR": "/Users/brock/Documents/GitHub/ai-native-traceability-system/.trace"
+      }
+    }
+  }
+}
+```
+
+**Key Points:**
+- Uses explicit Python path (not `trace-mcp` command)
+- Project-scoped: Only applies when working in this repository
+- Single server: Only `trace` server, no other MCP servers
+- File-based: All data in `.trace/events.jsonl`

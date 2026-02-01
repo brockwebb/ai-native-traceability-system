@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "trace": {
+      "command": "/opt/anaconda3/bin/python",
+      "args": ["-m", "mcp_server.server"],
+      "cwd": "/Users/brock/Documents/GitHub/ai-native-traceability-system",
+      "env": {
+        "TRACE_DIR": "/Users/brock/Documents/GitHub/ai-native-traceability-system/.trace"
+      }
+    }
+  }
+}
