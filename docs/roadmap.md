@@ -12,16 +12,38 @@ In AI-assisted development, code generates faster than humans comprehend. Struct
 
 The minimum to be useful on a real project (this one).
 
-- [ ] Event log (`events.jsonl`) — append-only, JSONL format
-- [ ] NetworkX projection — rebuild graph from events on load
-- [ ] Core queries: `trace`, `impact`, `orphans`, `decisions`, `stale`
+### Core Infrastructure
+- [x] Event log (`events.jsonl`) — append-only, JSONL format
+- [x] NetworkX projection — rebuild graph from events on load
+- [x] Parsers: Markdown headings, Python AST (functions/classes)
 - [ ] Anchor system with hash-based drift detection
-- [ ] Parsers: Markdown headings, Python AST (functions/classes)
-- [ ] MCP server exposing query tools
-- [ ] Claude Code skill for capture workflow
-- [ ] Dogfood: trace this repo's own development
 
-**Exit criteria:** Can answer "what depends on X" and "what did we decide about Y" across thread boundaries.
+### Query Tools
+- [x] `trace` — upstream/downstream neighbors
+- [x] `impact` — transitive downstream (what breaks if X changes)
+- [x] `orphans` — artifacts with no relationships
+- [x] `decisions` — all decision records
+- [x] `proposed_links` — links awaiting approval
+
+### Discovery Tools
+- [ ] `list_artifacts` — show all registered artifacts, filter by type
+- [ ] `search_artifacts` — find artifacts by name, path, or tags
+- [ ] Tags on artifacts — optional metadata for categorization
+
+### Write Tools
+- [x] `add_artifact` — register artifact (pending: add tags support)
+- [x] `propose_link` — create proposed relationship
+- [x] `accept_proposal` — promote to authoritative
+
+### Integration
+- [x] MCP server exposing all tools
+- [x] Claude Code skill for capture workflow
+- [x] Dogfood: trace this repo's own development
+
+### Batch Operations (UX)
+- [ ] `accept_all` or `accept_batch` — approve multiple links at once
+
+**Exit criteria:** Can answer "what depends on X", "what did we decide about Y", and "what artifacts exist about Z" across thread boundaries.
 
 ---
 
@@ -41,6 +63,7 @@ For people who want guidance on what artifacts to produce.
 
 Captured to prevent scope creep. Evaluate after MVP works.
 
+- **Data flow / architecture diagram generation** — Add runtime relationship types (`CALLS`, `SENDS_TO`, `TRANSFORMS`), finer granularity (functions not just files), optional data type annotations on edges. Enables auto-generated sequence diagrams, data flow diagrams, system architecture views from the trace graph. Requires: static analysis for call graphs + manual annotation for integration points.
 - Bibliography and citation tracking
 - Multi-project graphs (cross-repo traceability)
 - Visualization (timeline replay, graph explorer)
@@ -48,6 +71,7 @@ Captured to prevent scope creep. Evaluate after MVP works.
 - Git hook integration (auto-register on commit)
 - VS Code extension
 - Compliance report generation (for those who need it)
+- CLI wrapper (lower priority now that MCP works)
 
 ---
 
@@ -79,10 +103,10 @@ This system is a *specific* context manager — traceability-focused, relationsh
 - **Generic memory ≠ traceability** — we need typed relationships, impact queries, anchors
 - **Modular internals** — others can borrow our patterns if useful
 
-### Patterns to Adopt (with credit)
+### Patterns Adopted (with credit)
 
-- Hook-based auto-capture (from ccmem)
-- CLI UX: `setup`, `status`, `search` (from ccmem)
+- Hook-based auto-capture concept (from ccmem)
+- CLI UX patterns: `setup`, `status`, `search` (from ccmem)
 - MCP tool structure (from official server-memory)
 - All source projects are MIT licensed — credit in README
 
