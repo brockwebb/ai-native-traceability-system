@@ -361,8 +361,8 @@ class TraceabilityServer:
             )
 
 
-async def main():
-    """Main entry point for the MCP server."""
+async def async_main():
+    """Async main function for the MCP server."""
     # Get trace directory from environment or use default
     import os
     trace_dir = os.getenv("TRACE_DIR", ".trace")
@@ -371,5 +371,10 @@ async def main():
     await server.run()
 
 
+def main():
+    """Sync entry point wrapper for the MCP server."""
+    asyncio.run(async_main())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
