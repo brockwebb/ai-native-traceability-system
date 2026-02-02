@@ -23,7 +23,7 @@
 
 ---
 
-## v0.2: Infrastructure & Robustness
+## v0.2: Infrastructure & Robustness — ✅ COMPLETE
 
 See: [v0.2 Requirements](requirements/v0.2_requirements.md)
 
@@ -31,7 +31,7 @@ See: [v0.2 Requirements](requirements/v0.2_requirements.md)
 - [x] REQ-ALC-003: File deletion detection
 - [x] REQ-ALC-004: File rename detection
 - [x] REQ-CD-001: sync_with_git MCP tool
-- [ ] REQ-BA-001: Batch approval tools
+- [x] REQ-BA-001: Batch approval tools
 
 ---
 

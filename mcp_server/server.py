@@ -321,6 +321,42 @@ class TraceabilityServer:
                         "properties": {},
                     },
                 ),
+                Tool(
+                    name="accept_all_proposed",
+                    description="Promote all proposed links to authoritative state. Use for batch approval of all pending proposals.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},
+                    },
+                ),
+                Tool(
+                    name="accept_by_type",
+                    description="Promote all proposed links of a specific relationship type to authoritative state.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "relationship_type": {
+                                "type": "string",
+                                "description": "The relationship type to promote (e.g., 'implements', 'depends_on', 'verifies')",
+                            },
+                        },
+                        "required": ["relationship_type"],
+                    },
+                ),
+                Tool(
+                    name="accept_by_source",
+                    description="Promote all proposed links from a specific source artifact to authoritative state.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "artifact_id": {
+                                "type": "string",
+                                "description": "The source artifact ID",
+                            },
+                        },
+                        "required": ["artifact_id"],
+                    },
+                ),
             ]
 
         @self.server.call_tool()
@@ -359,6 +395,12 @@ class TraceabilityServer:
                     result = self._handle_health_check()
                 elif name == "sync_with_git":
                     result = self._handle_sync_with_git()
+                elif name == "accept_all_proposed":
+                    result = self._handle_accept_all_proposed()
+                elif name == "accept_by_type":
+                    result = self._handle_accept_by_type(arguments)
+                elif name == "accept_by_source":
+                    result = self._handle_accept_by_source(arguments)
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -649,6 +691,18 @@ class TraceabilityServer:
         # Determine repo root (parent of .trace directory)
         repo_root = self.trace_dir.parent
         return self.queries.sync_with_git(repo_root)
+
+    def _handle_accept_all_proposed(self) -> dict:
+        """Handle accept_all_proposed tool call."""
+        return self.queries.accept_all_proposed()
+
+    def _handle_accept_by_type(self, args: dict) -> dict:
+        """Handle accept_by_type tool call."""
+        return self.queries.accept_by_type(args["relationship_type"])
+
+    def _handle_accept_by_source(self, args: dict) -> dict:
+        """Handle accept_by_source tool call."""
+        return self.queries.accept_by_source(args["artifact_id"])
 
     async def run(self) -> None:
         """Run the MCP server."""

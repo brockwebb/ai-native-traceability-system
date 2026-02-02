@@ -357,3 +357,130 @@ class TraceQueries:
                 "renamed_count": len(renamed_files),
             }
         }
+
+    def accept_all_proposed(self) -> dict:
+        """Promote all proposed links to authoritative state.
+
+        Returns:
+            Dict with count of promoted links
+        """
+        from .events import EventLog
+        from .models import Event, EventType
+
+        promoted = []
+        proposed = self.proposed_links()
+
+        for u, v, d in proposed:
+            # Create promotion event
+            payload = {
+                "source_id": u,
+                "target_id": v,
+            }
+            event = Event(
+                event_type=EventType.LINK_PROMOTED,
+                payload=payload,
+                actor="human",
+                state=State.AUTHORITATIVE,
+            )
+
+            # Apply to graph first
+            self.tg._apply_event(event)
+
+            # Append to event log
+            self.tg.event_log.append(event)
+
+            promoted.append({"source": u, "target": v, "relationship_type": d.get("relationship_type")})
+
+        return {
+            "promoted_links": promoted,
+            "count": len(promoted),
+        }
+
+    def accept_by_type(self, relationship_type: str) -> dict:
+        """Promote proposed links of a specific relationship type to authoritative.
+
+        Args:
+            relationship_type: The relationship type to promote
+
+        Returns:
+            Dict with count of promoted links
+        """
+        from .events import EventLog
+        from .models import Event, EventType
+
+        promoted = []
+        proposed = self.proposed_links()
+
+        for u, v, d in proposed:
+            if d.get("relationship_type") == relationship_type:
+                # Create promotion event
+                payload = {
+                    "source_id": u,
+                    "target_id": v,
+                }
+                event = Event(
+                    event_type=EventType.LINK_PROMOTED,
+                    payload=payload,
+                    actor="human",
+                    state=State.AUTHORITATIVE,
+                )
+
+                # Apply to graph first
+                self.tg._apply_event(event)
+
+                # Append to event log
+                self.tg.event_log.append(event)
+
+                promoted.append({"source": u, "target": v, "relationship_type": d.get("relationship_type")})
+
+        return {
+            "relationship_type": relationship_type,
+            "promoted_links": promoted,
+            "count": len(promoted),
+        }
+
+    def accept_by_source(self, artifact_id: str) -> dict:
+        """Promote all proposed links from a specific source artifact to authoritative.
+
+        Args:
+            artifact_id: The source artifact ID
+
+        Returns:
+            Dict with count of promoted links
+        """
+        from .events import EventLog
+        from .models import Event, EventType
+
+        if artifact_id not in self.tg.graph:
+            return {"error": f"Artifact not found: {artifact_id}"}
+
+        promoted = []
+        proposed = self.proposed_links()
+
+        for u, v, d in proposed:
+            if u == artifact_id:
+                # Create promotion event
+                payload = {
+                    "source_id": u,
+                    "target_id": v,
+                }
+                event = Event(
+                    event_type=EventType.LINK_PROMOTED,
+                    payload=payload,
+                    actor="human",
+                    state=State.AUTHORITATIVE,
+                )
+
+                # Apply to graph first
+                self.tg._apply_event(event)
+
+                # Append to event log
+                self.tg.event_log.append(event)
+
+                promoted.append({"source": u, "target": v, "relationship_type": d.get("relationship_type")})
+
+        return {
+            "source_artifact": artifact_id,
+            "promoted_links": promoted,
+            "count": len(promoted),
+        }
