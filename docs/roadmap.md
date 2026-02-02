@@ -64,6 +64,51 @@ See: [v0.3 Requirements](requirements/v0.3_requirements.md)
 - Potential: Projects v2 custom fields for requirement status, verification state
 - Prerequisite: Stable baseline, post-MVP
 
+### Data Science / Reproducible Research Template
+
+**Purpose:** Support researchers and scientists documenting reproducible research workflows.
+
+**Artifact types:**
+- `research_question` — Core questions being investigated
+- `literature_review` — Prior work, citations, synthesis
+- `methodology` — Experimental design, statistical approach
+- `dataset` — Data sources, collection methods, preprocessing
+- `notebook` — Jupyter notebooks, analysis code
+- `analysis` — Statistical analysis, model results
+- `finding` — Key findings, interpretations
+- `report` — Papers, reports, presentations
+
+**Relationship chains:**
+- research_question → literature_review (informed_by)
+- methodology → research_question (addresses)
+- dataset → methodology (supports)
+- notebook → dataset (analyzes)
+- analysis → notebook (derives_from)
+- finding → analysis (derives_from)
+- report → finding (documents)
+
+**Directory structure (recommended):**
+```
+docs/
+  questions/        # Research questions, hypotheses
+  literature/       # Literature review, references
+  methodology/      # Study design, protocols
+data/
+  raw/              # Original data (may be gitignored)
+  processed/        # Cleaned/transformed data
+notebooks/          # Jupyter notebooks
+analysis/           # Scripts, statistical code
+reports/            # Papers, presentations, deliverables
+```
+
+**Use cases:**
+- Academic research projects
+- Data science team workflows
+- Lab notebooks with traceability
+- Reproducibility audits (trace from finding back to raw data)
+
+**Prerequisite:** v0.3 complete (template infrastructure mature)
+
 ### Other Ideas
 - **Data flow / architecture diagram generation** — Add runtime relationship types (`CALLS`, `SENDS_TO`, `TRANSFORMS`), finer granularity (functions not just files), optional data type annotations on edges
 - CLI wrapper for MCP tools
