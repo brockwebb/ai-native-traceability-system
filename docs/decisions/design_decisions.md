@@ -208,13 +208,13 @@ decisions(date_range)  → decisions logged in period
 
 This document captures decisions that diverge from or refine the initial design docs:
 
-- `ai_native_traceability_system_top_level_vision_plan.md` — vision still valid
-- `system_requirements_specification_ai_native_traceability_system.md` — FR-1 through FR-17 still valid, reframed around memory problem
-- `architecture_specification_ai_native_traceability_system.md` — Neo4j assumption replaced with NetworkX
-- `detailed_design_specification_ai_native_traceability_system.md` — authority model refined, file structure simplified
-- `concept_of_operations_conops_ai_native_traceability_system.md` — Claude Code as primary interface added
+- `docs/requirements/vision.md` — vision still valid
+- `docs/requirements/srs.md` — FR-1 through FR-17 still valid, reframed around memory problem
+- `docs/architecture/system_architecture.md` — Neo4j assumption replaced with NetworkX
+- `docs/design/detailed_design.md` — authority model refined, file structure simplified
+- `docs/requirements/conops.md` — Claude Code as primary interface added
 
-Original documents preserved as historical context.
+Original documents reorganized into SE template structure.
 
 ---
 

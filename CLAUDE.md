@@ -52,14 +52,15 @@ Core axiom: *Artifacts are inputs. Relationships are the system.*
 
 ## Design Documents
 
-All in `docs/`:
-- `ai_native_traceability_system_top_level_vision_plan.md` — vision, objectives
-- `system_requirements_specification_*.md` — FR-1 through FR-17
-- `architecture_specification_*.md` — component diagrams (note: Neo4j replaced by NetworkX)
-- `detailed_design_specification_*.md` — data model, services, milestones
-- `concept_of_operations_conops_*.md` — usage scenarios
-- `analysis_of_alternatives_*.md` — BUILD decision rationale
-- `design_decisions_2025-01-31.md` — **current working decisions**, supersedes older docs where they conflict
+Organized by systems engineering template:
+- `docs/requirements/vision.md` — vision, objectives
+- `docs/requirements/srs.md` — FR-1 through FR-17
+- `docs/requirements/conops.md` — usage scenarios
+- `docs/architecture/system_architecture.md` — component diagrams (note: Neo4j replaced by NetworkX)
+- `docs/design/detailed_design.md` — data model, services, milestones
+- `docs/decisions/design_decisions.md` — **current working decisions**, supersedes older docs where they conflict
+- `docs/decisions/analysis_of_alternatives.md` — BUILD decision rationale
+- `docs/decisions/dd_methodology_templates.md` — methodology template design
 
 ## Technology Stack
 

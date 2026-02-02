@@ -58,10 +58,11 @@ The MCP server handles the rest.
 
 ## Documentation
 
-See `docs/` for design specifications:
-- `design_decisions_2025-01-31.md` — current working decisions
-- `system_requirements_specification_*.md` — functional requirements
-- `architecture_specification_*.md` — system architecture
+See `docs/` for design specifications (organized by systems engineering template):
+- `docs/requirements/` — vision, requirements (SRS), ConOps
+- `docs/architecture/` — system architecture
+- `docs/design/` — detailed design specifications
+- `docs/decisions/` — current working decisions, ADRs, analysis of alternatives
 
 ## License
 

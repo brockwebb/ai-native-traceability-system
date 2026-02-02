@@ -531,12 +531,21 @@ class TraceabilityServer:
                 for tgt in targets:
                     # Check if link already exists
                     if not self.graph.graph.has_edge(src, tgt):
-                        self.graph.propose_link(
-                            source_id=src,
-                            target_id=tgt,
-                            relationship_type=rel_type,
-                            rationale=f"Template '{args['name']}': {chain.get('description', 'expected relationship')}"
+                        # Create and append event
+                        payload = {
+                            "source_id": src,
+                            "target_id": tgt,
+                            "relationship_type": rel_type,
+                        }
+                        event = Event(
+                            event_type=EventType.LINK_ADDED,
+                            payload=payload,
+                            actor="ai:template-scaffold",
+                            state=State.PROPOSED,
+                            rationale=f"Template '{args['name']}': {chain.get('description', 'expected relationship')}",
                         )
+                        self.event_log.append(event)
+                        self.graph._apply_event(event)
                         proposed.append({"source": src, "target": tgt, "relationship": rel_type})
 
         return {
