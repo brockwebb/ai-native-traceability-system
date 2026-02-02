@@ -16,6 +16,7 @@ from trace_core import (
     State,
     TraceGraph,
     TraceQueries,
+    TemplateLoader,
 )
 
 
@@ -28,6 +29,8 @@ class TraceabilityServer:
         self.graph = TraceGraph(self.event_log)
         self.graph.rebuild()
         self.queries = TraceQueries(self.graph)
+        templates_dir = Path(trace_dir) / "templates"
+        self.template_loader = TemplateLoader(templates_dir)
         self.server = Server("trace-server")
         self._register_tools()
 
@@ -204,6 +207,60 @@ class TraceabilityServer:
                         },
                     },
                 ),
+                Tool(
+                    name="list_templates",
+                    description="List available methodology templates",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},
+                    },
+                ),
+                Tool(
+                    name="get_template",
+                    description="Get a methodology template definition",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Template name (e.g., 'systems-engineering', 'agile', 'lightweight')",
+                            },
+                        },
+                        "required": ["name"],
+                    },
+                ),
+                Tool(
+                    name="apply_template",
+                    description="Scaffold expected relationships from a methodology template. Creates proposed links for all relationship_chains defined in template. Does NOT create artifacts — only relationships between existing artifacts.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Template name to apply",
+                            },
+                        },
+                        "required": ["name"],
+                    },
+                ),
+                Tool(
+                    name="classify_artifact",
+                    description="Suggest artifact type for a file based on template patterns",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "file_path": {
+                                "type": "string",
+                                "description": "Path to file (relative to repo root)",
+                            },
+                            "template": {
+                                "type": "string",
+                                "description": "Optional template name. If not provided, tries all templates.",
+                            },
+                        },
+                        "required": ["file_path"],
+                    },
+                ),
             ]
 
         @self.server.call_tool()
@@ -230,6 +287,14 @@ class TraceabilityServer:
                     result = self._handle_list_artifacts(arguments)
                 elif name == "search_artifacts":
                     result = self._handle_search_artifacts(arguments)
+                elif name == "list_templates":
+                    result = self._handle_list_templates()
+                elif name == "get_template":
+                    result = self._handle_get_template(arguments)
+                elif name == "apply_template":
+                    result = self._handle_apply_template(arguments)
+                elif name == "classify_artifact":
+                    result = self._handle_classify_artifact(arguments)
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -423,6 +488,82 @@ class TraceabilityServer:
             "matches": matches,
             "count": len(matches),
         }
+
+    def _handle_list_templates(self) -> dict:
+        """Handle list_templates tool call."""
+        templates = self.template_loader.list_templates()
+        return {"templates": templates, "count": len(templates)}
+
+    def _handle_get_template(self, args: dict) -> dict:
+        """Handle get_template tool call."""
+        template = self.template_loader.get_template(args["name"])
+        if not template:
+            return {"error": f"Template '{args['name']}' not found"}
+        return {"template": template}
+
+    def _handle_apply_template(self, args: dict) -> dict:
+        """Handle apply_template tool call."""
+        template = self.template_loader.get_template(args["name"])
+        if not template:
+            return {"error": f"Template '{args['name']}' not found"}
+
+        chains = template.get("relationship_chains", [])
+        proposed = []
+
+        # Get existing artifacts by type
+        artifacts_by_type = {}
+        for node_id, data in self.graph.graph.nodes(data=True):
+            atype = data.get("artifact_type", "unknown")
+            if atype not in artifacts_by_type:
+                artifacts_by_type[atype] = []
+            artifacts_by_type[atype].append(node_id)
+
+        # For each chain, propose links between matching artifacts
+        for chain in chains:
+            source_type = chain["source_type"]
+            target_type = chain["target_type"]
+            rel_type = chain["relationship"]
+
+            sources = artifacts_by_type.get(source_type, [])
+            targets = artifacts_by_type.get(target_type, [])
+
+            for src in sources:
+                for tgt in targets:
+                    # Check if link already exists
+                    if not self.graph.graph.has_edge(src, tgt):
+                        self.graph.propose_link(
+                            source_id=src,
+                            target_id=tgt,
+                            relationship_type=rel_type,
+                            rationale=f"Template '{args['name']}': {chain.get('description', 'expected relationship')}"
+                        )
+                        proposed.append({"source": src, "target": tgt, "relationship": rel_type})
+
+        return {
+            "template": args["name"],
+            "proposed_links": proposed,
+            "count": len(proposed)
+        }
+
+    def _handle_classify_artifact(self, args: dict) -> dict:
+        """Handle classify_artifact tool call."""
+        artifact_type = self.template_loader.classify_file(
+            args["file_path"],
+            args.get("template")
+        )
+
+        if artifact_type:
+            return {
+                "file_path": args["file_path"],
+                "suggested_type": artifact_type,
+                "template_used": args.get("template") or "auto"
+            }
+        else:
+            return {
+                "file_path": args["file_path"],
+                "suggested_type": None,
+                "message": "No matching pattern found"
+            }
 
     async def run(self) -> None:
         """Run the MCP server."""

@@ -3,6 +3,7 @@ from .models import Event, ArtifactType, RelationshipType, State, EventType
 from .events import EventLog
 from .graph import TraceGraph
 from .queries import TraceQueries
+from .templates import TemplateLoader
 
 __all__ = [
     "Event",
@@ -13,4 +14,5 @@ __all__ = [
     "EventLog",
     "TraceGraph",
     "TraceQueries",
+    "TemplateLoader",
 ]

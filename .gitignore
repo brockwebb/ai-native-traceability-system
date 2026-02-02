@@ -1,8 +1,8 @@
 # Ignore cached models (too large for git)
 models/roberta-large/
 
-# Ignore archive folder
-archive/
+# Ignore tmp  folder
+tmp/
 
 # Ignore handoffs folder
 handoffs/
