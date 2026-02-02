@@ -23,12 +23,15 @@
 
 ---
 
-## v0.2: Change Detection
+## v0.2: Health & Change Detection
 
-- [ ] File deletion detection (REQ-ALC-003)
-- [ ] File rename/move detection via git (REQ-ALC-004)
-- [ ] sync_with_git MCP tool
-- [ ] Batch approval MCP tool
+See: [v0.2 Requirements](requirements/v0.2_requirements.md)
+
+- [ ] REQ-HC-001: Health check MCP tool
+- [ ] REQ-ALC-003: File deletion detection
+- [ ] REQ-ALC-004: File rename detection
+- [ ] REQ-CD-001: sync_with_git MCP tool
+- [ ] REQ-BA-001: Batch approval tools
 
 ---
 
