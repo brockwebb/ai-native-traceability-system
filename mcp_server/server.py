@@ -313,6 +313,14 @@ class TraceabilityServer:
                         "properties": {},
                     },
                 ),
+                Tool(
+                    name="sync_with_git",
+                    description="Synchronize trace state with git repository. Detects added files (in git but not traced), deleted files (traced but not in git), and renamed files. Returns changes for user confirmation.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},
+                    },
+                ),
             ]
 
         @self.server.call_tool()
@@ -349,6 +357,8 @@ class TraceabilityServer:
                     result = self._handle_classify_artifact(arguments)
                 elif name == "health_check":
                     result = self._handle_health_check()
+                elif name == "sync_with_git":
+                    result = self._handle_sync_with_git()
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -633,6 +643,12 @@ class TraceabilityServer:
         # Determine repo root (parent of .trace directory)
         repo_root = self.trace_dir.parent
         return self.queries.health_check(repo_root)
+
+    def _handle_sync_with_git(self) -> dict:
+        """Handle sync_with_git tool call."""
+        # Determine repo root (parent of .trace directory)
+        repo_root = self.trace_dir.parent
+        return self.queries.sync_with_git(repo_root)
 
     async def run(self) -> None:
         """Run the MCP server."""

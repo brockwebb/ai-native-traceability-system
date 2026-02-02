@@ -28,9 +28,9 @@
 See: [v0.2 Requirements](requirements/v0.2_requirements.md)
 
 - [x] REQ-HC-001: Health check MCP tool
-- [ ] REQ-ALC-003: File deletion detection
-- [ ] REQ-ALC-004: File rename detection
-- [ ] REQ-CD-001: sync_with_git MCP tool
+- [x] REQ-ALC-003: File deletion detection
+- [x] REQ-ALC-004: File rename detection
+- [x] REQ-CD-001: sync_with_git MCP tool
 - [ ] REQ-BA-001: Batch approval tools
 
 ---

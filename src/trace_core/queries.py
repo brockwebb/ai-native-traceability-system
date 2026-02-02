@@ -248,3 +248,112 @@ class TraceQueries:
                 "warning_count": len(warnings),
             }
         }
+
+    def sync_with_git(self, repo_root: Path | None = None) -> dict:
+        """Detect changes between trace state and git repository.
+
+        Detects:
+        - Added files (in git but not traced)
+        - Deleted files (traced but not in git)
+        - Renamed files (using git rename detection)
+
+        Args:
+            repo_root: Path to git repo root (defaults to cwd)
+
+        Returns:
+            Dict with detected changes
+        """
+        if repo_root is None:
+            repo_root = Path.cwd()
+
+        # Get git-tracked files
+        try:
+            result = subprocess.run(
+                ["git", "ls-files"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            git_files = set(result.stdout.strip().split('\n'))
+        except subprocess.CalledProcessError as e:
+            return {
+                "error": f"Failed to get git files: {e}",
+                "added_files": [],
+                "deleted_files": [],
+                "renamed_files": [],
+            }
+
+        # Get all traced file paths
+        traced_files = {}  # file_path -> artifact_id
+        for artifact_id in self.tg.graph.nodes():
+            artifact = self.tg.get_artifact(artifact_id)
+            if artifact and artifact.get("file_path"):
+                traced_files[artifact["file_path"]] = artifact_id
+
+        # Detect added files (in git but not traced)
+        added_files = []
+        for git_file in git_files:
+            if git_file and git_file not in traced_files:
+                # Suggest artifact type based on templates
+                suggested_type = None
+                if self.template_loader:
+                    suggested_type = self.template_loader.classify_file(git_file)
+
+                added_files.append({
+                    "file_path": git_file,
+                    "suggested_type": suggested_type or "document",
+                })
+
+        # Detect deleted files (traced but not in git)
+        deleted_files = []
+        for file_path, artifact_id in traced_files.items():
+            if file_path not in git_files:
+                deleted_files.append({
+                    "file_path": file_path,
+                    "artifact_id": artifact_id,
+                })
+
+        # Detect renamed files using git diff with rename detection
+        renamed_files = []
+        try:
+            # Get renames between last commit and working tree
+            result = subprocess.run(
+                ["git", "diff", "--name-status", "--diff-filter=R", "HEAD"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            # Parse output: "R<score>\told_path\tnew_path"
+            for line in result.stdout.strip().split('\n'):
+                if not line:
+                    continue
+                parts = line.split('\t')
+                if len(parts) >= 3:
+                    old_path = parts[1]
+                    new_path = parts[2]
+
+                    # Check if old_path is traced
+                    if old_path in traced_files:
+                        artifact_id = traced_files[old_path]
+                        renamed_files.append({
+                            "artifact_id": artifact_id,
+                            "old_path": old_path,
+                            "new_path": new_path,
+                        })
+        except subprocess.CalledProcessError:
+            # No renames or error - not critical
+            pass
+
+        return {
+            "added_files": added_files,
+            "deleted_files": deleted_files,
+            "renamed_files": renamed_files,
+            "summary": {
+                "added_count": len(added_files),
+                "deleted_count": len(deleted_files),
+                "renamed_count": len(renamed_files),
+            }
+        }
