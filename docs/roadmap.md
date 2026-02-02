@@ -16,14 +16,14 @@
 - [x] Auto-reload on events.jsonl change
 - [x] Dogfooding (system traces itself)
 
-### MVP Blockers (Task 010)
-- [ ] Bootstrap scan respects .gitignore (REQ-ALC-001)
-- [ ] Bootstrap scan uses git ls-files (REQ-ALC-002)
-- [ ] Template classification applied during registration (REQ-ALC-005)
+### MVP Blockers (Task 010) — ✅ COMPLETE
+- [x] Bootstrap scan respects .gitignore (REQ-ALC-001)
+- [x] Bootstrap scan uses git ls-files (REQ-ALC-002)
+- [x] Template classification applied during registration (REQ-ALC-005)
 
 ---
 
-## v0.2: Health & Change Detection
+## v0.2: Infrastructure & Robustness
 
 See: [v0.2 Requirements](requirements/v0.2_requirements.md)
 
@@ -35,7 +35,19 @@ See: [v0.2 Requirements](requirements/v0.2_requirements.md)
 
 ---
 
-## v0.3: Anchors & Drift
+## v0.3: Adoption & AI-First Workflows
+
+See: [v0.3 Requirements](requirements/v0.3_requirements.md)
+
+- [ ] REQ-INIT-001: One-command `trace init`
+- [ ] REQ-SKILL-001: CC skill file for auto-capture
+- [ ] REQ-AUTO-001: Auto-registration on file create
+- [ ] REQ-IMPACT-001: Proactive impact warnings
+- [ ] REQ-INFER-001: Relationship inference from imports
+
+---
+
+## v0.4: Anchors & Drift
 
 - [ ] In-file anchors (section headings, functions)
 - [ ] Content hash tracking
