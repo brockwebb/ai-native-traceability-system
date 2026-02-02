@@ -70,7 +70,22 @@ Requirements governing how the trace system maintains awareness of filesystem st
 2. Confidence threshold for rename detection (git similarity)?
 3. Behavior for untracked files explicitly registered?
 
+## Verification Status
+
+| Requirement | Status | Implementation | Verification |
+|-------------|--------|----------------|--------------|
+| REQ-ALC-001 | ✅ PASS | scripts/bootstrap_scan.py:get_git_tracked_files() | No tmp/ files registered (0/43) |
+| REQ-ALC-002 | ✅ PASS | scripts/bootstrap_scan.py:get_git_tracked_files() | Only git-tracked files (43/52 tracked) |
+| REQ-ALC-003 | ⏸️ DEFERRED | src/trace_core/git_sync.py (stub) | Future: v0.2 |
+| REQ-ALC-004 | ⏸️ DEFERRED | src/trace_core/git_sync.py (stub) | Future: v0.2 |
+| REQ-ALC-005 | ✅ PASS | scripts/bootstrap_scan.py:classify_file() | Correct types: architecture(1), conops(1), requirement(1), decision(1), design(1), test(7), module(17) |
+| REQ-ALC-006 | ✅ PASS | mcp_server/server.py | MCP tools: list_templates, get_template, apply_template, classify_artifact |
+
+**Test Suite:** tests/test_artifact_lifecycle.py (4/4 tests passing)
+
+**Last Verified:** 2025-02-02
+
 ## Trace Links
 
 - Implements: [SRS currency/awareness section - TBD]
-- Verified by: tests/test_artifact_lifecycle.py [to be created]
+- Verified by: tests/test_artifact_lifecycle.py

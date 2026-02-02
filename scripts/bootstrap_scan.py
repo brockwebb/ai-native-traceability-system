@@ -2,10 +2,12 @@
 """Bootstrap scan: Register all repository artifacts with tags and relationships."""
 import ast
 import re
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 from mcp_server.server import TraceabilityServer
+from trace_core.templates import TemplateLoader
 
 
 class BootstrapScanner:
@@ -14,13 +16,14 @@ class BootstrapScanner:
     def __init__(self, repo_root: str, trace_dir: str = ".trace"):
         self.repo_root = Path(repo_root)
         self.server = TraceabilityServer(trace_dir)
+        self.template_loader = TemplateLoader(Path(trace_dir) / "templates")
 
         # Track what we've done
         self.artifacts_added = 0
         self.artifacts_existing = 0
         self.links_proposed = 0
 
-        # Skip patterns
+        # Skip patterns (less needed now that we use git ls-files)
         self.skip_dirs = {
             '.git', '.pytest_cache', '__pycache__', '.trace',
             'handoffs', 'cc_tasks', '.claude', 'venv', 'env'
@@ -140,29 +143,47 @@ class BootstrapScanner:
 
         return list(set(tags))  # Remove duplicates
 
+    def get_git_tracked_files(self) -> set[str]:
+        """Get files tracked by git (respects .gitignore automatically).
+
+        Implements REQ-ALC-001 and REQ-ALC-002.
+        """
+        try:
+            result = subprocess.run(
+                ["git", "ls-files"],
+                cwd=self.repo_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return set(result.stdout.strip().split('\n'))
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: git ls-files failed: {e}")
+            return set()
+
+    def classify_file(self, file_path: str) -> tuple[str, str | None]:
+        """Return (artifact_type, template_used) for file.
+
+        Implements REQ-ALC-005: Template-based classification.
+        """
+        # Try templates in priority order
+        for template_name in ["systems-engineering", "agile", "lightweight"]:
+            artifact_type = self.template_loader.classify_file(file_path, template_name)
+            if artifact_type:
+                return artifact_type, template_name
+
+        # Fallback to document
+        return "document", None
+
     def determine_artifact_type(self, file_path: Path) -> str:
-        """Determine artifact type from file path and content."""
-        name = file_path.name.lower()
+        """Determine artifact type using template classification.
 
-        # Python files
-        if file_path.suffix == '.py':
-            if 'test' in file_path.parts or name.startswith('test_'):
-                return 'test'
-            return 'module'
-
-        # Markdown files
-        if file_path.suffix == '.md':
-            if 'decision' in name:
-                return 'decision'
-            if 'requirement' in name or 'spec' in name:
-                return 'requirement'
-            return 'document'
-
-        # Config files
-        if name in ['pyproject.toml', 'setup.py', 'setup.cfg']:
-            return 'document'
-
-        return 'document'
+        DEPRECATED: Use classify_file() instead for template-based classification.
+        This method kept for backward compatibility during transition.
+        """
+        rel_path = str(file_path.relative_to(self.repo_root))
+        artifact_type, _ = self.classify_file(rel_path)
+        return artifact_type
 
     def parse_python_imports(self, file_path: Path) -> Set[str]:
         """Parse Python file to extract internal imports."""
@@ -244,27 +265,49 @@ class BootstrapScanner:
         return None
 
     def scan_and_register(self):
-        """Main scan process."""
+        """Main scan process.
+
+        Implements REQ-ALC-001, REQ-ALC-002, REQ-ALC-005.
+        """
         print("=== Bootstrap Scan: Registering Repository Artifacts ===\n")
+
+        # Get git-tracked files (REQ-ALC-001, REQ-ALC-002)
+        print("Getting git-tracked files (respects .gitignore)...")
+        tracked_files = self.get_git_tracked_files()
+        print(f"  Git tracks {len(tracked_files)} files\n")
 
         # Phase 1: Register all files
         print("Phase 1: Scanning and registering files...")
         all_files = []
 
         for file_path in self.repo_root.rglob('*'):
-            if file_path.is_file() and not self.should_skip(file_path):
-                all_files.append(file_path)
+            if not file_path.is_file():
+                continue
+
+            rel_path = str(file_path.relative_to(self.repo_root))
+
+            # REQ-ALC-001 & REQ-ALC-002: Only process git-tracked files
+            if rel_path not in tracked_files:
+                continue
+
+            # Additional skip checks (for safety, though git ls-files should handle most)
+            if self.should_skip(file_path):
+                continue
+
+            all_files.append(file_path)
 
         print(f"  Found {len(all_files)} files to process\n")
 
         # Register artifacts
         for file_path in sorted(all_files):
             rel_path = str(file_path.relative_to(self.repo_root))
-            artifact_type = self.determine_artifact_type(file_path)
+            # REQ-ALC-005: Use template classification
+            artifact_type, template = self.classify_file(rel_path)
             tags = self.infer_tags_from_path(file_path)
 
             if self.register_artifact(rel_path, artifact_type, rel_path, tags):
-                print(f"  ✓ {rel_path} ({artifact_type}, tags: {tags})")
+                template_info = f" [{template}]" if template else ""
+                print(f"  ✓ {rel_path} ({artifact_type}{template_info}, tags: {tags})")
 
         print(f"\n  Registered: {self.artifacts_added} new, {self.artifacts_existing} existing\n")
 

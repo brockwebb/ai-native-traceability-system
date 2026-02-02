@@ -20,27 +20,27 @@ artifact_types:
   - id: architecture
     name: Architecture
     description: System or software architecture specification
-    file_patterns: ["**/architecture*.md", "**/arch_*.md"]
-
-  - id: design
-    name: Design
-    description: Detailed design specification, module design
-    file_patterns: ["**/design*.md", "**/detailed_design*.md"]
+    file_patterns: ["**/*architecture*.md", "**/arch_*.md"]
 
   - id: decision
     name: Decision Record
     description: Architecture decision record, trade study, design decision
-    file_patterns: ["**/decision*.md", "**/adr*.md", "**/design_decision*.md"]
+    file_patterns: ["**/*decision*.md", "**/adr*.md"]
 
-  - id: module
-    name: Code Module
-    description: Source code file implementing design
-    file_patterns: ["**/*.py", "**/*.js", "**/*.ts", "**/*.go", "**/*.rs"]
+  - id: design
+    name: Design
+    description: Detailed design specification, module design
+    file_patterns: ["**/*design*.md"]
 
   - id: test
     name: Test
     description: Unit test, integration test, system test
     file_patterns: ["**/test_*.py", "**/*_test.py", "**/*.test.js", "**/*.spec.ts"]
+
+  - id: module
+    name: Code Module
+    description: Source code file implementing design
+    file_patterns: ["**/*.py", "**/*.js", "**/*.ts", "**/*.go", "**/*.rs"]
 
   - id: verification
     name: Verification Report
