@@ -42,8 +42,8 @@ class TraceabilityServer:
         self._event_log.init()
         self._graph = TraceGraph(self._event_log)
         self._graph.rebuild()
-        self._queries = TraceQueries(self._graph)
         self._template_loader = TemplateLoader(self.trace_dir / "templates")
+        self._queries = TraceQueries(self._graph, self._template_loader)
         if self.events_path.exists():
             self._last_mtime = os.path.getmtime(self.events_path)
 
@@ -305,6 +305,14 @@ class TraceabilityServer:
                         "required": ["file_path"],
                     },
                 ),
+                Tool(
+                    name="health_check",
+                    description="Validate trace data integrity. Checks for missing files, broken links, duplicate IDs, and invalid artifact types.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},
+                    },
+                ),
             ]
 
         @self.server.call_tool()
@@ -339,6 +347,8 @@ class TraceabilityServer:
                     result = self._handle_apply_template(arguments)
                 elif name == "classify_artifact":
                     result = self._handle_classify_artifact(arguments)
+                elif name == "health_check":
+                    result = self._handle_health_check()
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -617,6 +627,12 @@ class TraceabilityServer:
                 "suggested_type": None,
                 "message": "No matching pattern found"
             }
+
+    def _handle_health_check(self) -> dict:
+        """Handle health_check tool call."""
+        # Determine repo root (parent of .trace directory)
+        repo_root = self.trace_dir.parent
+        return self.queries.health_check(repo_root)
 
     async def run(self) -> None:
         """Run the MCP server."""
