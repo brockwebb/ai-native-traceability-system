@@ -64,6 +64,14 @@ For people who want guidance on what artifacts to produce.
 Captured to prevent scope creep. Evaluate after MVP works.
 
 - **Data flow / architecture diagram generation** — Add runtime relationship types (`CALLS`, `SENDS_TO`, `TRANSFORMS`), finer granularity (functions not just files), optional data type annotations on edges. Enables auto-generated sequence diagrams, data flow diagrams, system architecture views from the trace graph. Requires: static analysis for call graphs + manual annotation for integration points.
+
+### GitHub Integration (Future)
+- Artifact type: `issue` for GitHub Issues
+- Auto-link: code referencing `#123` proposes link to issue artifact
+- Bi-directional sync: trace shows implementations, GitHub shows linked artifacts
+- Potential: Projects v2 custom fields for requirement status, verification state
+- Prerequisite: Stable baseline, post-MVP
+
 - Bibliography and citation tracking
 - Multi-project graphs (cross-repo traceability)
 - Visualization (timeline replay, graph explorer)
