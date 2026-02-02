@@ -58,6 +58,33 @@ Adoption fails when tools require discipline. Git succeeded because you can't co
 
 Human discipline doesn't scale. AI attention does.
 
+## Clarification: Encoding Discipline, Not Eliminating It
+
+This principle does NOT mean:
+- Systems/software engineering expertise is unnecessary
+- Human judgment is removed from the process
+- Rigor is sacrificed for convenience
+
+This principle DOES mean:
+- Best practices are baked into the system
+- Users benefit from SE discipline without being SE experts
+- Tacit knowledge (the stuff in people's heads) becomes stored knowledge
+- The "right way" is the default path, not extra effort
+
+### Value Proposition
+
+| Without trace | With trace |
+|---------------|------------|
+| Knowledge lives in heads | Knowledge lives in graph |
+| Onboarding = months of archeology | Onboarding = query the relationships |
+| "Why was this built?" = ask original author | "Why was this built?" = trace to decision |
+| Maintainability degrades over time | Maintainability persists |
+| New teammates lost | New teammates oriented |
+
+The system enhances knowledge work. It makes engineering decisions visible, traceable, and queryable. Experts still design the system, make judgment calls, and validate quality — but the routine capture of *what* and *why* is handled automatically.
+
+This is not AI replacing engineers. This is AI doing the bookkeeping so engineers can focus on engineering.
+
 ## References
 
 - Roadmap: v0.2+ features
