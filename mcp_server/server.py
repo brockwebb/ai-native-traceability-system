@@ -1,5 +1,6 @@
 """MCP Server exposing traceability tools to Claude."""
 import asyncio
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -24,15 +25,58 @@ class TraceabilityServer:
     """MCP server wrapping the traceability system."""
 
     def __init__(self, trace_dir: str = ".trace"):
-        self.event_log = EventLog(trace_dir)
-        self.event_log.init()
-        self.graph = TraceGraph(self.event_log)
-        self.graph.rebuild()
-        self.queries = TraceQueries(self.graph)
-        templates_dir = Path(trace_dir) / "templates"
-        self.template_loader = TemplateLoader(templates_dir)
+        self.trace_dir = Path(trace_dir)
+        self.events_path = self.trace_dir / "events.jsonl"
+        self._last_mtime = 0
+        self._event_log = None
+        self._graph = None
+        self._queries = None
+        self._template_loader = None
         self.server = Server("trace-server")
+        self._load()
         self._register_tools()
+
+    def _load(self):
+        """Load or reload graph from events."""
+        self._event_log = EventLog(str(self.trace_dir))
+        self._event_log.init()
+        self._graph = TraceGraph(self._event_log)
+        self._graph.rebuild()
+        self._queries = TraceQueries(self._graph)
+        self._template_loader = TemplateLoader(self.trace_dir / "templates")
+        if self.events_path.exists():
+            self._last_mtime = os.path.getmtime(self.events_path)
+
+    def _ensure_fresh(self):
+        """Reload if events file changed."""
+        if self.events_path.exists():
+            current_mtime = os.path.getmtime(self.events_path)
+            if current_mtime > self._last_mtime:
+                self._load()
+
+    @property
+    def graph(self):
+        """Get graph, reloading if events changed."""
+        self._ensure_fresh()
+        return self._graph
+
+    @property
+    def event_log(self):
+        """Get event log, reloading if events changed."""
+        self._ensure_fresh()
+        return self._event_log
+
+    @property
+    def queries(self):
+        """Get queries, reloading if events changed."""
+        self._ensure_fresh()
+        return self._queries
+
+    @property
+    def template_loader(self):
+        """Get template loader, reloading if events changed."""
+        self._ensure_fresh()
+        return self._template_loader
 
     def _register_tools(self) -> None:
         """Register all traceability tools with the MCP server."""
