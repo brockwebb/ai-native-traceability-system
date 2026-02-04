@@ -4,6 +4,7 @@ from .events import EventLog
 from .graph import TraceGraph
 from .queries import TraceQueries
 from .templates import TemplateLoader
+from .reports import ReportGenerator
 
 __all__ = [
     "Event",
@@ -15,4 +16,5 @@ __all__ = [
     "TraceGraph",
     "TraceQueries",
     "TemplateLoader",
+    "ReportGenerator",
 ]

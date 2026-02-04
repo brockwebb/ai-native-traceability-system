@@ -18,6 +18,7 @@ from trace_core import (
     TraceGraph,
     TraceQueries,
     TemplateLoader,
+    ReportGenerator,
 )
 
 
@@ -32,6 +33,7 @@ class TraceabilityServer:
         self._graph = None
         self._queries = None
         self._template_loader = None
+        self._report_generator = None
         self.server = Server("trace-server")
         self._load()
         self._register_tools()
@@ -44,6 +46,7 @@ class TraceabilityServer:
         self._graph.rebuild()
         self._template_loader = TemplateLoader(self.trace_dir / "templates")
         self._queries = TraceQueries(self._graph, self._template_loader)
+        self._report_generator = ReportGenerator(self._graph)
         if self.events_path.exists():
             self._last_mtime = os.path.getmtime(self.events_path)
 
@@ -407,6 +410,136 @@ class TraceabilityServer:
                         "required": ["file_path"]
                     }
                 ),
+                Tool(
+                    name="export_mermaid",
+                    description="Export graph subset as Mermaid flowchart diagram. Supports filtering by artifact types, relationship types, and traversal from a root node.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "root": {
+                                "type": "string",
+                                "description": "Root artifact ID to start traversal from (optional)"
+                            },
+                            "depth": {
+                                "type": "integer",
+                                "description": "Maximum depth of traversal (optional, default: 10)"
+                            },
+                            "direction": {
+                                "type": "string",
+                                "description": "Traversal direction: 'upstream', 'downstream', or 'both' (default: 'both')",
+                                "enum": ["upstream", "downstream", "both"]
+                            },
+                            "artifact_types": {
+                                "type": "array",
+                                "description": "Filter to include only these artifact types (optional)",
+                                "items": {"type": "string"}
+                            },
+                            "relationship_types": {
+                                "type": "array",
+                                "description": "Filter to include only these relationship types (optional)",
+                                "items": {"type": "string"}
+                            }
+                        }
+                    }
+                ),
+                Tool(
+                    name="export_dependency_map",
+                    description="Export dependency map in various formats (mermaid, dot, json) for visualization.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "root": {
+                                "type": "string",
+                                "description": "Root artifact ID to start traversal from (optional)"
+                            },
+                            "depth": {
+                                "type": "integer",
+                                "description": "Maximum depth of traversal (optional)"
+                            },
+                            "format": {
+                                "type": "string",
+                                "description": "Output format: 'mermaid', 'dot', or 'json' (default: 'mermaid')",
+                                "enum": ["mermaid", "dot", "json"]
+                            },
+                            "artifact_types": {
+                                "type": "array",
+                                "description": "Filter to include only these artifact types (optional)",
+                                "items": {"type": "string"}
+                            },
+                            "relationship_types": {
+                                "type": "array",
+                                "description": "Filter to include only these relationship types (optional)",
+                                "items": {"type": "string"}
+                            }
+                        }
+                    }
+                ),
+                Tool(
+                    name="export_coverage_report",
+                    description="Generate coverage report showing traceability gaps: orphan requirements (no implementation), untested modules, undocumented decisions, and pending approvals.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "format": {
+                                "type": "string",
+                                "description": "Output format: 'md' for markdown or 'json' (default: 'md')",
+                                "enum": ["md", "json"]
+                            }
+                        }
+                    }
+                ),
+                Tool(
+                    name="export_rtm",
+                    description="Generate Requirements Traceability Matrix showing requirements, their implementations, tests, and traceability status.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "format": {
+                                "type": "string",
+                                "description": "Output format: 'md', 'csv', or 'json' (default: 'md')",
+                                "enum": ["md", "csv", "json"]
+                            }
+                        }
+                    }
+                ),
+                Tool(
+                    name="export_impact_report",
+                    description="Generate impact analysis report for specified artifacts, showing direct and transitive downstream dependencies with risk assessment.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "artifact_ids": {
+                                "type": "array",
+                                "description": "List of artifact IDs to analyze",
+                                "items": {"type": "string"}
+                            },
+                            "format": {
+                                "type": "string",
+                                "description": "Output format: 'md' or 'json' (default: 'md')",
+                                "enum": ["md", "json"]
+                            }
+                        },
+                        "required": ["artifact_ids"]
+                    }
+                ),
+                Tool(
+                    name="export_decision_log",
+                    description="Generate chronological decision log with optional date filtering.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "since": {
+                                "type": "string",
+                                "description": "Filter decisions since this date string (optional)"
+                            },
+                            "format": {
+                                "type": "string",
+                                "description": "Output format: 'md' or 'json' (default: 'md')",
+                                "enum": ["md", "json"]
+                            }
+                        }
+                    }
+                ),
             ]
 
         @self.server.call_tool()
@@ -457,6 +590,18 @@ class TraceabilityServer:
                     result = self._handle_check_impact(arguments)
                 elif name == "infer_dependencies":
                     result = self._handle_infer_dependencies(arguments)
+                elif name == "export_mermaid":
+                    result = self._handle_export_mermaid(arguments)
+                elif name == "export_dependency_map":
+                    result = self._handle_export_dependency_map(arguments)
+                elif name == "export_coverage_report":
+                    result = self._handle_export_coverage_report(arguments)
+                elif name == "export_rtm":
+                    result = self._handle_export_rtm(arguments)
+                elif name == "export_impact_report":
+                    result = self._handle_export_impact_report(arguments)
+                elif name == "export_decision_log":
+                    result = self._handle_export_decision_log(arguments)
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -778,6 +923,79 @@ class TraceabilityServer:
             repo_root=repo_root,
             auto_propose=auto_propose
         )
+
+    def _handle_export_mermaid(self, args: dict) -> dict:
+        """Handle export_mermaid tool call."""
+        result = self._report_generator.export_mermaid(
+            root=args.get("root"),
+            depth=args.get("depth"),
+            direction=args.get("direction", "both"),
+            artifact_types=args.get("artifact_types"),
+            relationship_types=args.get("relationship_types")
+        )
+        return {
+            "format": "mermaid",
+            "diagram": result
+        }
+
+    def _handle_export_dependency_map(self, args: dict) -> dict:
+        """Handle export_dependency_map tool call."""
+        format_type = args.get("format", "mermaid")
+        result = self._report_generator.export_dependency_map(
+            root=args.get("root"),
+            depth=args.get("depth"),
+            format=format_type,
+            artifact_types=args.get("artifact_types"),
+            relationship_types=args.get("relationship_types")
+        )
+        return {
+            "format": format_type,
+            "output": result
+        }
+
+    def _handle_export_coverage_report(self, args: dict) -> dict:
+        """Handle export_coverage_report tool call."""
+        format_type = args.get("format", "md")
+        result = self._report_generator.export_coverage_report(format=format_type)
+        return {
+            "format": format_type,
+            "report": result
+        }
+
+    def _handle_export_rtm(self, args: dict) -> dict:
+        """Handle export_rtm tool call."""
+        format_type = args.get("format", "md")
+        result = self._report_generator.export_rtm(format=format_type)
+        return {
+            "format": format_type,
+            "rtm": result
+        }
+
+    def _handle_export_impact_report(self, args: dict) -> dict:
+        """Handle export_impact_report tool call."""
+        format_type = args.get("format", "md")
+        artifact_ids = args["artifact_ids"]
+        result = self._report_generator.export_impact_report(
+            artifact_ids=artifact_ids,
+            format=format_type
+        )
+        return {
+            "format": format_type,
+            "report": result,
+            "artifacts_analyzed": len(artifact_ids)
+        }
+
+    def _handle_export_decision_log(self, args: dict) -> dict:
+        """Handle export_decision_log tool call."""
+        format_type = args.get("format", "md")
+        result = self._report_generator.export_decision_log(
+            since=args.get("since"),
+            format=format_type
+        )
+        return {
+            "format": format_type,
+            "log": result
+        }
 
     async def run(self) -> None:
         """Run the MCP server."""
