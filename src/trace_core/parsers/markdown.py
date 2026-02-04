@@ -21,6 +21,44 @@ class MarkdownParser:
     """Extract heading anchors from Markdown files."""
 
     HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+)$")
+    LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^\)]+)\)")
+
+    def parse_links(self, file_path: Path | str) -> set[str]:
+        """Parse Markdown file to extract internal file links.
+
+        Args:
+            file_path: Path to Markdown file
+
+        Returns:
+            Set of relative file paths linked in the document
+            (excludes http/https URLs, anchor-only links)
+        """
+        file_path = Path(file_path)
+        if not file_path.exists():
+            return set()
+
+        content = file_path.read_text()
+        links = set()
+
+        for match in self.LINK_PATTERN.finditer(content):
+            link_target = match.group(2).strip()
+
+            # Skip external URLs
+            if link_target.startswith(('http://', 'https://', 'mailto:')):
+                continue
+
+            # Skip anchor-only links
+            if link_target.startswith('#'):
+                continue
+
+            # Remove fragment identifier if present
+            if '#' in link_target:
+                link_target = link_target.split('#')[0]
+
+            if link_target:
+                links.add(link_target)
+
+        return links
 
     def parse(self, file_path: Path | str) -> list[Anchor]:
         """Parse markdown file and extract heading anchors."""

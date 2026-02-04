@@ -389,6 +389,24 @@ class TraceabilityServer:
                         "required": ["artifact_id"]
                     }
                 ),
+                Tool(
+                    name="infer_dependencies",
+                    description="Analyze a file's imports/references and propose depends_on links to traced artifacts.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "file_path": {
+                                "type": "string",
+                                "description": "Relative path to file to analyze"
+                            },
+                            "auto_propose": {
+                                "type": "boolean",
+                                "description": "If true, automatically propose links. If false, just return what would be proposed (default: false)"
+                            }
+                        },
+                        "required": ["file_path"]
+                    }
+                ),
             ]
 
         @self.server.call_tool()
@@ -437,6 +455,8 @@ class TraceabilityServer:
                     result = self._handle_register_file(arguments)
                 elif name == "check_impact":
                     result = self._handle_check_impact(arguments)
+                elif name == "infer_dependencies":
+                    result = self._handle_infer_dependencies(arguments)
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -748,6 +768,16 @@ class TraceabilityServer:
         """Handle check_impact tool call."""
         threshold = args.get("threshold", 3)
         return self.queries.check_impact(args["artifact_id"], threshold)
+
+    def _handle_infer_dependencies(self, args: dict) -> dict:
+        """Handle infer_dependencies tool call."""
+        repo_root = self.trace_dir.parent
+        auto_propose = args.get("auto_propose", False)
+        return self.queries.infer_dependencies(
+            args["file_path"],
+            repo_root=repo_root,
+            auto_propose=auto_propose
+        )
 
     async def run(self) -> None:
         """Run the MCP server."""

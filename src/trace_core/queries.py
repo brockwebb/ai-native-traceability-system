@@ -573,3 +573,163 @@ class TraceQueries:
             "exceeds_threshold": exceeds,
             "warning": warning
         }
+
+    def infer_dependencies(
+        self,
+        file_path: str,
+        repo_root: Path = None,
+        auto_propose: bool = False
+    ) -> dict:
+        """Infer depends_on relationships from file imports/references.
+
+        Implements REQ-INFER-001: Automatic relationship inference.
+
+        For Python files: parses imports, maps to traced artifacts
+        For Markdown files: parses links, maps to traced artifacts
+
+        Args:
+            file_path: Relative path to file to analyze
+            repo_root: Repository root for file access (defaults to cwd)
+            auto_propose: If True, automatically propose links. If False, dry-run.
+
+        Returns:
+            Dict with dependencies list, proposed_count, skipped_count
+        """
+        from .models import Event, EventType
+        from .parsers.python_ast import PythonParser
+        from .parsers.markdown import MarkdownParser
+
+        if repo_root is None:
+            repo_root = Path.cwd()
+
+        full_path = repo_root / file_path
+        if not full_path.exists():
+            return {
+                "file_path": file_path,
+                "dependencies": [],
+                "proposed_count": 0,
+                "skipped_count": 0,
+                "error": f"File not found: {file_path}"
+            }
+
+        dependencies = []
+        skipped = 0
+
+        # Determine file type and parse accordingly
+        if file_path.endswith('.py'):
+            # Parse Python imports
+            parser = PythonParser()
+            imports = parser.parse_imports(full_path)
+
+            for import_path in imports:
+                # Try to map import to a file path
+                artifact_id = self._map_python_import_to_artifact(import_path, repo_root)
+
+                if artifact_id and artifact_id in self.tg.graph:
+                    dependencies.append({
+                        "source": file_path,
+                        "target": artifact_id,
+                        "relationship_type": "depends_on",
+                        "rationale": f"Imports {import_path} from {artifact_id}"
+                    })
+                else:
+                    skipped += 1
+
+        elif file_path.endswith('.md'):
+            # Parse Markdown links
+            parser = MarkdownParser()
+            links = parser.parse_links(full_path)
+
+            for link in links:
+                # Resolve relative link
+                link_path = (full_path.parent / link).resolve()
+                try:
+                    artifact_id = str(link_path.relative_to(repo_root))
+                except ValueError:
+                    # Link is outside repo
+                    skipped += 1
+                    continue
+
+                if artifact_id in self.tg.graph:
+                    dependencies.append({
+                        "source": file_path,
+                        "target": artifact_id,
+                        "relationship_type": "references",
+                        "rationale": f"Links to {artifact_id}"
+                    })
+                else:
+                    skipped += 1
+
+        # Auto-propose if requested
+        proposed_count = 0
+        if auto_propose and dependencies:
+            for dep in dependencies:
+                # Check if link already exists
+                if self.tg.graph.has_edge(dep["source"], dep["target"]):
+                    continue
+
+                payload = {
+                    "source_id": dep["source"],
+                    "target_id": dep["target"],
+                    "relationship_type": dep["relationship_type"],
+                }
+
+                event = Event(
+                    event_type=EventType.LINK_ADDED,
+                    payload=payload,
+                    actor="ai:infer-dependencies",
+                    state=State.PROPOSED,
+                    rationale=dep["rationale"],
+                )
+
+                self.tg._apply_event(event)
+                self.tg.event_log.append(event)
+                proposed_count += 1
+
+        return {
+            "file_path": file_path,
+            "dependencies": dependencies,
+            "proposed_count": proposed_count,
+            "skipped_count": skipped,
+        }
+
+    def _map_python_import_to_artifact(self, import_path: str, repo_root: Path) -> str | None:
+        """Map Python import path to artifact ID (file path).
+
+        Examples:
+            trace_core.models → src/trace_core/models.py
+            mcp_server.server → mcp_server/server.py
+        """
+        parts = import_path.split('.')
+
+        # Try common patterns
+        candidates = []
+
+        if parts[0] == 'trace_core':
+            # src/trace_core/...
+            candidates.append(repo_root / 'src' / '/'.join(parts))
+        elif parts[0] == 'mcp_server':
+            # mcp_server/...
+            candidates.append(repo_root / '/'.join(parts))
+        else:
+            # Try direct path
+            candidates.append(repo_root / '/'.join(parts))
+
+        # Try each candidate
+        for candidate in candidates:
+            py_file = candidate.with_suffix('.py')
+            if py_file.exists():
+                try:
+                    return str(py_file.relative_to(repo_root))
+                except ValueError:
+                    pass
+
+            # Try __init__.py
+            init_file = candidate / '__init__.py'
+            if init_file.exists():
+                try:
+                    return str(init_file.relative_to(repo_root))
+                except ValueError:
+                    pass
+
+        return None

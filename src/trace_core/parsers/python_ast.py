@@ -20,6 +20,45 @@ class PythonAnchor:
 class PythonParser:
     """Extract function and class anchors from Python files."""
 
+    def parse_imports(self, file_path: Path | str) -> set[str]:
+        """Parse Python file to extract import module paths.
+
+        Args:
+            file_path: Path to Python file
+
+        Returns:
+            Set of import module paths (e.g., 'trace_core.models', 'mcp_server.server')
+        """
+        file_path = Path(file_path)
+        if not file_path.exists():
+            return set()
+
+        try:
+            source = file_path.read_text()
+            tree = ast.parse(source)
+        except (SyntaxError, UnicodeDecodeError):
+            return set()
+
+        imports = set()
+
+        for node in ast.walk(tree):
+            # Handle 'import x' and 'import x.y'
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.add(alias.name)
+
+            # Handle 'from x import y'
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    # Add the base module
+                    imports.add(node.module)
+                    # Also add module.name for each imported name
+                    for alias in node.names:
+                        if alias.name != '*':
+                            imports.add(f"{node.module}.{alias.name}")
+
+        return imports
+
     def parse(self, file_path: Path | str) -> list[PythonAnchor]:
         """Parse Python file and extract function/class anchors."""
         file_path = Path(file_path)
