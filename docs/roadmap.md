@@ -47,11 +47,66 @@ See: [v0.3 Requirements](requirements/v0.3_requirements.md)
 
 ---
 
-## v0.4: Anchors & Drift
+## v0.4: Reports & Visualization
 
-- [ ] In-file anchors (section headings, functions)
-- [ ] Content hash tracking
-- [ ] Drift detection and alerts
+See: [v0.4 Requirements](requirements/v0.4_requirements.md)
+
+**Purpose:** Human-facing outputs. The graph has data; now humans can see it.
+
+**Requirements:**
+- [ ] REQ-RTM-001: Requirements Traceability Matrix export (MD/CSV/HTML)
+- [ ] REQ-DEP-001: Dependency map visualization (Mermaid/DOT/JSON)
+- [ ] REQ-COV-001: Coverage report (orphans, untested code, gaps)
+- [ ] REQ-IMPACT-RPT-001: Impact reports for change analysis
+- [ ] REQ-DECISION-LOG-001: Chronological decision log export
+- [ ] REQ-EXPORT-MERMAID-001: Mermaid graph export with filters
+
+**Deliverables:**
+- `trace report rtm` - RTM generation
+- `trace report deps` - Dependency visualizations
+- `trace report coverage` - Gap analysis
+- `trace report impact` - Change impact reports
+- `trace report decisions` - Decision log
+- `trace export mermaid` - Flexible graph export
+
+---
+
+## v0.5: Analysis Integration & Enrichment
+
+See: [v0.5 Requirements](requirements/v0.5_requirements.md)
+
+**Purpose:** External tool integration for automatic dependency detection. Function-level granularity. Drift detection. The "invisible spider" that enriches the graph.
+
+**Design principle:** Adopt before create. Leverage pydeps, pyreverse, import-linter.
+
+**Requirements:**
+- [ ] REQ-ANALYZE-001: Manual analysis trigger (`trace analyze`)
+- [ ] REQ-ANALYZE-002: Init-time analysis (`trace init --analyze`)
+- [ ] REQ-ANALYZE-003: Analyzer configuration (per-language)
+- [ ] REQ-ANALYZE-004: Lazy/background analysis (query-triggered)
+- [ ] REQ-ANCHOR-001: Function-level anchors (`file.py::function`)
+- [ ] REQ-DRIFT-001: Content hash tracking
+- [ ] REQ-DRIFT-002: Drift detection alerts
+- [ ] REQ-ENRICH-001: Docstring extraction to artifact metadata
+
+**Tool Integration Pattern:**
+```
+[External Tool]     →  [Parser]           →  [Trace Graph]
+pydeps --json       →  parse_pydeps()     →  depends_on links
+pyreverse -o json   →  parse_pyreverse()  →  depends_on + contains
+import-linter       →  parse_importlinter() → depends_on links
+```
+
+**Trigger Models:**
+- **Manual:** `trace analyze` (CI/CD, debugging, explicit refresh)
+- **Init-time:** `trace init --analyze` (cold start bootstrap)
+- **Lazy:** Automatic on query if data stale (invisible to user)
+
+**Use cases:**
+- CI/CD: `trace analyze && trace report coverage` - catch gaps
+- Debugging: "Why doesn't trace see this dependency?" → `trace analyze --full`
+- Cold start: `trace init --analyze` on fresh clone
+- Invisible: CC asks "what calls this?" → auto-analyze if stale
 
 ---
 

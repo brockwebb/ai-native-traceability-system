@@ -82,7 +82,7 @@ your-project/
 - **Graph**: Rebuilt in-memory (NetworkX) from events on load
 - **Authority model**: AI writes "proposed", human approves in batches
 
-## MCP Tools (21 total)
+## MCP Tools (22 total)
 
 ### Core Operations
 - `add_artifact` - Register artifacts with type, tags, file location
@@ -116,10 +116,20 @@ your-project/
 - **v0.1.0** - MVP: Core graph operations, MCP server, self-dogfooding
 - **v0.2.0** - Infrastructure: Health checks, git sync, batch approvals
 - **v0.3.0** - Adoption: Global install, `trace init`, auto-capture, impact warnings
+- **v0.4.0** - Reports & Visualization (planned)
+- **v0.5.0** - Analysis Integration & Enrichment (planned)
+
+## Documentation
+
+- **[Quick Start](docs/user-guide/quick-start.md)** - Get running in 5 minutes
+- **[Concepts](docs/user-guide/concepts.md)** - Understand artifacts, links, authority model
+- **[Workflows](docs/user-guide/workflows.md)** - Common usage patterns
+- **[CLI Reference](docs/reference/cli.md)** - All CLI commands
+- **[MCP Tools Reference](docs/reference/mcp-tools.md)** - All 22 MCP tools
 
 ## Status
 
-**Alpha.** Core functionality complete. This repo traces itself.
+**Alpha (v0.3.0).** Core functionality complete. This repo traces itself.
 
 ## License
 
