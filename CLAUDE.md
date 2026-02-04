@@ -24,6 +24,8 @@ AI-Native Traceability System — project memory infrastructure that survives co
 
 **When writing CC tasks:** Save to cc_tasks directory with descriptive name (e.g., `implement_event_parser.md`)
 
+**When referencing files in conversation:** Always use full absolute paths when handing off a file path to the user. This eliminates ambiguity and reduces token waste from clarification. Example: "Task ready: `/Users/brock/Documents/GitHub/ai-native-traceability-system/cc_tasks/2025-02-03_req_init_001.md`"
+
 ## Architecture
 
 Core axiom: *Artifacts are inputs. Relationships are the system.*
