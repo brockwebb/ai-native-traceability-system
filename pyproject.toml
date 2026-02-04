@@ -42,7 +42,7 @@ Repository = "https://github.com/brockwebb/ai-native-traceability-system"
 
 [project.scripts]
 trace-mcp = "mcp_server.server:main"
-trace = "trace_core.cli:cli"
+ants = "trace_core.cli:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/trace_core", "mcp_server"]
