@@ -118,6 +118,69 @@ class TraceQueries:
 
         return matches
 
+    def _check_version_alignment(self, repo_root: Path) -> list[dict]:
+        """Check pyproject.toml version matches latest git tag.
+
+        Args:
+            repo_root: Path to git repo root
+
+        Returns:
+            List of issues (empty if aligned or no check needed)
+        """
+        issues = []
+
+        pyproject_path = repo_root / "pyproject.toml"
+        if not pyproject_path.exists():
+            return []  # No pyproject.toml, skip check
+
+        # Parse version from pyproject.toml
+        try:
+            import tomllib
+        except ImportError:
+            # Python < 3.11, try tomli
+            try:
+                import tomli as tomllib  # type: ignore
+            except ImportError:
+                return []  # Can't parse, skip
+
+        try:
+            with open(pyproject_path, "rb") as f:
+                pyproject = tomllib.load(f)
+            pkg_version = pyproject.get("project", {}).get("version")
+        except Exception:
+            return []  # Can't parse, skip
+
+        if not pkg_version:
+            return []
+
+        # Get latest git tag
+        try:
+            result = subprocess.run(
+                ["git", "describe", "--tags", "--abbrev=0"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode != 0:
+                return []  # No tags, skip
+
+            latest_tag = result.stdout.strip()
+
+            # Normalize: v0.4.0 -> 0.4.0
+            tag_version = latest_tag.lstrip("v")
+
+            if tag_version != pkg_version:
+                issues.append({
+                    "type": "version_mismatch",
+                    "message": f"pyproject.toml version ({pkg_version}) != latest git tag ({latest_tag})",
+                    "pyproject_version": pkg_version,
+                    "git_tag": latest_tag
+                })
+        except FileNotFoundError:
+            pass  # git not available
+
+        return issues
+
     def health_check(self, repo_root: Path | None = None) -> dict:
         """Validate trace data integrity.
 
@@ -127,6 +190,7 @@ class TraceQueries:
         - No duplicate artifact IDs
         - All artifact_types are valid per loaded templates
         - Events file is parseable (implicit if we loaded successfully)
+        - Version alignment (pyproject.toml vs git tag)
 
         Args:
             repo_root: Path to git repo root (defaults to cwd)
@@ -234,6 +298,9 @@ class TraceQueries:
 
         # Check 5: Events file parseable (implicit - if we got here, it parsed)
         # No explicit check needed
+
+        # Check 6: Version alignment (pyproject.toml vs git tag)
+        issues.extend(self._check_version_alignment(repo_root))
 
         # Summary
         is_healthy = len(issues) == 0

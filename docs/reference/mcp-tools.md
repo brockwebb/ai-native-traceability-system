@@ -153,6 +153,13 @@ Suggest artifact type based on file path.
 ### health_check
 Validate trace data integrity.
 
+**Checks:**
+- Missing files (traced but deleted)
+- Broken links (reference non-existent artifacts)
+- Duplicate IDs
+- Invalid artifact types
+- **Version mismatch** (pyproject.toml vs git tag)
+
 **Input:** none
 **Output:**
 ```json
@@ -164,7 +171,8 @@ Validate trace data integrity.
     "proposed_count": 5
   },
   "issues": [
-    {"type": "missing_file", "artifacts": [...]}
+    {"type": "missing_file", "artifacts": [...]},
+    {"type": "version_mismatch", "pyproject_version": "0.3.0", "git_tag": "v0.4.0"}
   ]
 }
 ```

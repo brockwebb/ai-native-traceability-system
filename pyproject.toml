@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ai-native-traceability"
-version = "0.3.0"
+version = "0.4.1"
 description = "Project memory infrastructure that survives context windows, thread death, and human absence"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     { name = "Brock Webb", email = "brockwebb@users.noreply.github.com" }
 ]
@@ -17,8 +17,8 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "networkx>=3.0",
@@ -56,7 +56,7 @@ python_files = ["test_*.py"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
