@@ -357,6 +357,38 @@ class TraceabilityServer:
                         "required": ["artifact_id"],
                     },
                 ),
+                Tool(
+                    name="register_file",
+                    description="Auto-classify and register a file as an artifact. Use immediately after creating any new file.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "file_path": {
+                                "type": "string",
+                                "description": "Relative path to the file"
+                            }
+                        },
+                        "required": ["file_path"]
+                    }
+                ),
+                Tool(
+                    name="check_impact",
+                    description="Check downstream impact before modifying a file. Warns if dependencies exceed threshold.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "artifact_id": {
+                                "type": "string",
+                                "description": "Artifact to check"
+                            },
+                            "threshold": {
+                                "type": "integer",
+                                "description": "Warning threshold (default: 3)"
+                            }
+                        },
+                        "required": ["artifact_id"]
+                    }
+                ),
             ]
 
         @self.server.call_tool()
@@ -401,6 +433,10 @@ class TraceabilityServer:
                     result = self._handle_accept_by_type(arguments)
                 elif name == "accept_by_source":
                     result = self._handle_accept_by_source(arguments)
+                elif name == "register_file":
+                    result = self._handle_register_file(arguments)
+                elif name == "check_impact":
+                    result = self._handle_check_impact(arguments)
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
@@ -703,6 +739,15 @@ class TraceabilityServer:
     def _handle_accept_by_source(self, args: dict) -> dict:
         """Handle accept_by_source tool call."""
         return self.queries.accept_by_source(args["artifact_id"])
+
+    def _handle_register_file(self, args: dict) -> dict:
+        """Handle register_file tool call."""
+        return self.queries.register_file(args["file_path"])
+
+    def _handle_check_impact(self, args: dict) -> dict:
+        """Handle check_impact tool call."""
+        threshold = args.get("threshold", 3)
+        return self.queries.check_impact(args["artifact_id"], threshold)
 
     async def run(self) -> None:
         """Run the MCP server."""

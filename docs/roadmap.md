@@ -40,9 +40,9 @@ See: [v0.2 Requirements](requirements/v0.2_requirements.md)
 See: [v0.3 Requirements](requirements/v0.3_requirements.md)
 
 - [x] REQ-INIT-001: One-command `trace init`
-- [ ] REQ-SKILL-001: CC skill file for auto-capture
-- [ ] REQ-AUTO-001: Auto-registration on file create
-- [ ] REQ-IMPACT-001: Proactive impact warnings
+- [x] REQ-SKILL-001: CC skill file for auto-capture (via mandatory rules)
+- [x] REQ-AUTO-001: Auto-registration on file create (MCP tool + skill)
+- [x] REQ-IMPACT-001: Proactive impact warnings (MCP tool + skill)
 - [ ] REQ-INFER-001: Relationship inference from imports
 
 ---

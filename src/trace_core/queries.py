@@ -484,3 +484,92 @@ class TraceQueries:
             "promoted_links": promoted,
             "count": len(promoted),
         }
+
+    def register_file(self, file_path: str) -> dict:
+        """Auto-classify and register a file as an artifact.
+
+        Implements REQ-AUTO-001: Zero-friction file registration.
+
+        Args:
+            file_path: Relative path to file
+
+        Returns:
+            Dict with artifact_id, artifact_type, success, already_exists
+        """
+        from .models import Event, EventType
+
+        # Check if already registered
+        if file_path in self.tg.graph:
+            artifact = self.tg.get_artifact(file_path)
+            return {
+                "artifact_id": file_path,
+                "artifact_type": artifact.get("artifact_type") if artifact else "unknown",
+                "already_exists": True,
+                "success": True
+            }
+
+        # Auto-classify using template loader
+        artifact_type = "document"  # default
+        if self.template_loader:
+            classified = self.template_loader.classify_file(file_path)
+            if classified:
+                artifact_type = classified
+
+        # Register
+        payload = {
+            "artifact_id": file_path,
+            "artifact_type": artifact_type,
+            "file_path": file_path,
+        }
+
+        event = Event(
+            event_type=EventType.ARTIFACT_ADDED,
+            payload=payload,
+            actor="ai:auto-capture",
+            state=State.PROPOSED,
+        )
+
+        # Apply to graph first
+        self.tg._apply_event(event)
+
+        # Append to event log
+        self.tg.event_log.append(event)
+
+        return {
+            "artifact_id": file_path,
+            "artifact_type": artifact_type,
+            "already_exists": False,
+            "success": True
+        }
+
+    def check_impact(self, artifact_id: str, threshold: int = 3) -> dict:
+        """Check impact and return warning if above threshold.
+
+        Implements REQ-IMPACT-001: Proactive impact warnings.
+
+        Args:
+            artifact_id: Artifact to check
+            threshold: Warn if downstream count exceeds this (default: 3)
+
+        Returns:
+            Dict with downstream list, count, exceeds_threshold, warning message
+        """
+        downstream = self.impact(artifact_id)
+        count = len(downstream)
+        exceeds = count > threshold
+
+        warning = None
+        if exceeds:
+            preview = downstream[:5]
+            warning = f"⚠️ {artifact_id} has {count} downstream dependencies. Modifications may affect: {', '.join(preview)}"
+            if count > 5:
+                warning += f" and {count - 5} more."
+
+        return {
+            "artifact_id": artifact_id,
+            "downstream": downstream,
+            "count": count,
+            "threshold": threshold,
+            "exceeds_threshold": exceeds,
+            "warning": warning
+        }
