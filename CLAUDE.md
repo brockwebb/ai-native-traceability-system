@@ -39,11 +39,21 @@ Core axiom: *Artifacts are inputs. Relationships are the system.*
 - Zero infrastructure dependency
 - Neo4j optional for power users, not default
 
-### Authority Model
-- AI writes everything as `proposed` — zero friction capture
-- Human approves in batches at natural breakpoints
-- Both proposed and authoritative states are queryable
-- Proposed = working memory, Authoritative = committed memory
+### Authority Model: DD-AUTO-ACCEPT-001 (SUPERSEDES ALL PRIOR)
+
+The system documents itself confidently. Auto-accept is the default.
+
+**DO NOT** propose batch approval workflows, human review gates, or
+"proposed → human approves" patterns. This was explicitly superseded.
+
+| Situation | Behavior |
+|-----------|----------|
+| Routine capture | Auto-accept. Silent. Confident. |
+| High-impact change (breaks existing links) | Warn, human decides, decision traced |
+| Human reviewing reports/RTMs | Corrections made explicitly |
+| Ambiguous/unclear | Ask, human provides direction |
+
+The spider spins its web. Human corrects after the fact, not before.
 
 ### File Structure (planned)
 ```
@@ -85,9 +95,8 @@ This repository uses AI-native traceability to track relationships between requi
 
 **Claude Code should:**
 1. **Capture new artifacts automatically** - Register files when creating them
-2. **Propose links when relationships are clear** - Connect requirements to implementations, tests to code, etc.
-3. **Check impact before major changes** - Use `impact()` to see downstream effects
-4. **End sessions with approval reminder** - Note how many proposed links await approval
+2. **Auto-accept links when relationships are clear** - Connect requirements to implementations, tests to code, etc. (routine capture is auto-accepted)
+3. **Check impact before major changes** - Use `impact()` to see downstream effects, warn on high-impact changes
 
 **Skill file:** See `.claude/skills/traceability.md` for detailed patterns and workflows.
 
@@ -95,10 +104,10 @@ This repository uses AI-native traceability to track relationships between requi
 - `trace(artifact_id)` - Show upstream/downstream neighbors
 - `impact(artifact_id)` - See what breaks if this changes
 - `orphans()` - Find unlinked artifacts
-- `proposed_links()` - Review pending approvals
+- `proposed_links()` - Review links (mostly for debugging, auto-accept is default)
 - `add_artifact(id, type, file_path)` - Register new artifact
-- `propose_link(source, target, rel_type, rationale)` - Create relationship
-- `accept_proposal(source, target)` - Promote to authoritative (human only)
+- `propose_link(source, target, rel_type, rationale)` - Create relationship (auto-accepted)
+- `accept_proposal(source, target)` - Explicit accept (for corrections/high-impact)
 
 **Current trace state:**
 - View: `.trace/events.jsonl` (append-only event log)
@@ -126,8 +135,8 @@ This project uses **project-scoped MCP configuration** via `.mcp.json` in the pr
 
 **Write Operations:**
 8. `add_artifact(id, type, file_path?, tags?)` - Register artifact
-9. `propose_link(source, target, rel_type, rationale)` - Create link
-10. `accept_proposal(source, target)` - Promote to authoritative
+9. `propose_link(source, target, rel_type, rationale)` - Create link (auto-accepted for routine capture)
+10. `accept_proposal(source, target)` - Explicit promotion (for corrections/high-impact changes)
 
 ### What's NOT Available
 
